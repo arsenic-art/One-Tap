@@ -115,7 +115,7 @@ const HeroSection = () => {
         </div>
 
         {/* Floating Elements */}
-        <div className="absolute top-32 left-10 animate-bounce delay-300">
+        {/* <div className="absolute top-32 left-10 animate-bounce delay-300">
           <div className="w-12 h-12 bg-blue-100/50 rounded-full flex items-center justify-center">
             <span className="text-2xl">🚗</span>
           </div>
@@ -124,7 +124,7 @@ const HeroSection = () => {
           <div className="w-10 h-10 bg-orange-100/50 rounded-full flex items-center justify-center">
             <span className="text-xl">🔧</span>
           </div>
-        </div>
+        </div> */}
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 py-20">
           {/* Main Hero Content */}
@@ -202,7 +202,7 @@ const HeroSection = () => {
             {benefits.map((benefit, index) => (
               <div
                 key={index}
-                className={`group bg-white/70 backdrop-blur-sm rounded-3xl p-8 text-center hover:bg-white transition-all duration-500 transform hover:scale-105 hover:-translate-y-2 shadow-lg ${
+                className={`group bg-white/70 backdrop-blur-sm rounded-3xl p-8 text-center hover:bg-white transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 shadow-lg ${
                   currentBenefit === index
                     ? "ring-2 ring-orange-300 bg-white"
                     : ""
@@ -223,7 +223,7 @@ const HeroSection = () => {
                   <div
                     className={`h-full bg-gradient-to-r ${
                       benefit.color
-                    } transition-all duration-300 ${
+                    } transition-all duration-500 ${
                       currentBenefit === index ? "w-full" : "w-0"
                     }`}
                   ></div>

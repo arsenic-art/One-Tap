@@ -328,7 +328,7 @@ const AddMechanicPage = () => {
                       className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
                         errors.phone ? "border-red-300" : "border-gray-200"
                       }`}
-                      placeholder="1234567890 (wihtout country code)"
+                      placeholder="1234567890 (without country code)"
                     />
                     {errors.phone && (
                       <p className="text-red-500 text-sm mt-1">

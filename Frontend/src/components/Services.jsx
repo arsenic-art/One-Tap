@@ -325,19 +325,19 @@ const Services = ({ selectedService = null, onBack }) => {
                 }`} aria-current={currentStep === step ? "step" : false}>
                   {currentStep > step ? '✓' : step}
                 </div>
-                {step < 4 && (
-                  <div className={`w-16 h-1 mx-2 ${
+                {step <= 4 && (
+                  <div className={`w-16 h-1  ${
                     currentStep > step ? 'bg-red-600' : 'bg-gray-200'
                   }`}></div>
                 )}
               </div>
             ))}
           </div>
-          <div className="flex justify-between text-sm text-gray-600 mt-2">
+          <div className="flex justify-between text-sm text-gray-600 mt-2 ">
             <span>Contact Info</span>
             <span>Vehicle Details</span>
             <span>Service & Schedule</span>
-            <span>Review & Book</span>
+            <span >Review & Book</span>
           </div>
         </div>
       </div>

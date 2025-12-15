@@ -1,11 +1,18 @@
+// src/components/AuthPage.jsx
 import React, { useState, useEffect } from "react";
 import Navbar from "./Navbar";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { TermsOfService, PrivacyPolicy } from "../pages/TermsAndPrivacyPage";
 
+/**
+ * Note: this component expects a prop `signUp` which is treated as the
+ * initial "isLogin" boolean (kept for backward compatibility).
+ * If you prefer clearer semantics, rename the prop where you call this component.
+ */
 const AuthPage = ({ signUp }) => {
-  const [isLogin, setIsLogin] = useState(signUp);
+  // Treat `signUp` as the initial isLogin value (keeps your previous setup intact).
+  const [isLogin, setIsLogin] = useState(Boolean(signUp));
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -20,27 +27,25 @@ const AuthPage = ({ signUp }) => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [activeButton, setActiveButton] = useState("services");
+  const [activeButton, setActiveButton] = useState("services"); // "services" | "mechanic"
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [isUser, setIsUser] = useState(false);
+  const [isUser, setIsUser] = useState(true); // default role
   const [isMechanic, setIsMechanic] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn] = useState(false); // actual login state should come from auth store/context
+
+  // sync agreeToTerms when both modals are accepted
   useEffect(() => {
     if (termsAccepted && privacyAccepted) {
       setFormData((prev) => ({ ...prev, agreeToTerms: true }));
+    } else if (!termsAccepted || !privacyAccepted) {
+      setFormData((prev) => ({ ...prev, agreeToTerms: false }));
     }
   }, [termsAccepted, privacyAccepted]);
 
-  useEffect(() => {
-    if (formData.agreeToTerms === false) {
-      setTermsAccepted(false);
-      setPrivacyAccepted(false);
-    }
-  }, [formData.agreeToTerms]);
-
+  // lock body scroll while modals are open
   useEffect(() => {
     if (showTerms || showPrivacy) {
       document.body.style.overflow = "hidden";
@@ -52,6 +57,7 @@ const AuthPage = ({ signUp }) => {
     };
   }, [showTerms, showPrivacy]);
 
+  // escape key closes modals
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape") {
@@ -63,19 +69,21 @@ const AuthPage = ({ signUp }) => {
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
-  const handleButtonClick = (buttonType) => {
-    setActiveButton(buttonType);
-    if (buttonType === "mechanic") {
-      setIsUser(false);
-      setIsMechanic(true);
-    } else {
-      setIsUser(true);
-      setIsMechanic(false);
-    }
-  };
-
+  // Keep activeButton and role in sync
   useEffect(() => {
-    setIsLogin(signUp);
+    if (activeButton === "mechanic") {
+      setIsMechanic(true);
+      setIsUser(false);
+    } else {
+      setIsMechanic(false);
+      setIsUser(true);
+    }
+  }, [activeButton]);
+
+  // If parent toggles the prop, update local isLogin and reset active button
+  useEffect(() => {
+    setIsLogin(Boolean(signUp));
+    // keep role as-is, but reset UI toggle to 'services'
     setActiveButton("services");
   }, [signUp]);
 
@@ -90,27 +98,25 @@ const AuthPage = ({ signUp }) => {
     }
   };
 
+  // validation effect for password match and phone
   useEffect(() => {
-    const validate = () => {
-      const newErrors = {};
-      if (
-        !isLogin &&
-        formData.password &&
-        formData.confirmPassword &&
-        formData.password !== formData.confirmPassword
-      ) {
-        newErrors.confirmPassword = "Passwords do not match.";
-      }
-      if (!isLogin && formData.phone && !/^\d{10}$/.test(formData.phone)) {
-        newErrors.phone = "Please enter a valid 10-digit phone number.";
-      }
-      setErrors(newErrors);
-    };
-    validate();
+    const newErrors = {};
+    if (
+      !isLogin &&
+      formData.password &&
+      formData.confirmPassword &&
+      formData.password !== formData.confirmPassword
+    ) {
+      newErrors.confirmPassword = "Passwords do not match.";
+    }
+    if (!isLogin && formData.phone && !/^\d{10}$/.test(formData.phone)) {
+      newErrors.phone = "Please enter a valid 10-digit phone number.";
+    }
+    setErrors(newErrors);
   }, [formData.password, formData.confirmPassword, formData.phone, isLogin]);
 
   const isFormValid = () => {
-    const hasErrors = Object.values(errors).some((error) => error !== null);
+    const hasErrors = Object.values(errors).some((error) => error != null);
     if (hasErrors) return false;
 
     if (isLogin) {
@@ -127,57 +133,65 @@ const AuthPage = ({ signUp }) => {
     }
   };
 
+  // central submit handler: performs navigation after validation
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!isFormValid()) {
-      console.error("Submission failed: Form is invalid.");
+      console.error("Submission failed: Form is invalid.", errors);
       return;
     }
 
-    //Check if its user or mechanic
-    
-
+    // simulate success and navigate based on role & mode
+    // replace this with actual API/auth calls
     if (isLogin) {
+      // Login success -> redirect to relevant page
+      if (isUser) {
+        navigate("/services");
+      } else {
+        navigate("/addmechanic");
+      }
       console.log("Login attempt:", formData);
     } else {
+      // Signup success
+      if (isUser) {
+        navigate("/services");
+      } else {
+        navigate("/addmechanic");
+      }
       console.log("Signup attempt:", formData);
     }
   };
 
   return (
     <>
-      <Navbar isUser={isUser} isLoggedIn={isLoggedIn}/>
+      <Navbar isUser={isUser} isLoggedIn={isLoggedIn} />
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center p-4">
         <div className="flex items-center justify-center p-4">
           <div className="bg-white rounded-full shadow-lg flex p-2 space-x-2 border border-gray-200">
             <button
-              onClick={() => handleButtonClick("services")}
-              className={`
-                px-6 py-3 rounded-full text-lg font-semibold transition-all duration-300 ease-in-out
-                ${
-                  activeButton === "services"
-                    ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-md"
-                    : "bg-transparent text-gray-700 hover:bg-gray-50"
-                }
-              `}
+              onClick={() => setActiveButton("services")}
+              className={`px-6 py-3 rounded-full text-lg font-semibold transition-all duration-300 ease-in-out ${
+                activeButton === "services"
+                  ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-md"
+                  : "bg-transparent text-gray-700 hover:bg-gray-50"
+              }`}
             >
               Get Our Services
             </button>
+
             <button
-              onClick={() => handleButtonClick("mechanic")}
-              className={`
-                px-6 py-3 rounded-full text-lg font-semibold transition-all duration-300 ease-in-out
-                ${
-                  activeButton === "mechanic"
-                    ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-md"
-                    : "bg-transparent text-gray-700 hover:bg-gray-50"
-                }
-              `}
+              onClick={() => setActiveButton("mechanic")}
+              className={`px-6 py-3 rounded-full text-lg font-semibold transition-all duration-300 ease-in-out ${
+                activeButton === "mechanic"
+                  ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-md"
+                  : "bg-transparent text-gray-700 hover:bg-gray-50"
+              }`}
             >
-              Join as Mechanic
+              {isLogin ? "Sign in as Mechanic" : "Create Mechanic Account"}
             </button>
           </div>
         </div>
+
         <div className="w-full max-w-lg mx-auto">
           <div className="bg-white rounded-3xl shadow-2xl p-8">
             <div className="text-center mb-8">
@@ -189,7 +203,9 @@ const AuthPage = ({ signUp }) => {
                 {isLogin ? "Access your OneTap account" : "Join the revolution"}
               </p>
             </div>
+
             <form className="space-y-4" onSubmit={handleSubmit}>
+              {/* Signup-only fields */}
               {!isLogin && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -203,7 +219,7 @@ const AuthPage = ({ signUp }) => {
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
                       placeholder="Tulsidas"
-                      required
+                      required={!isLogin}
                     />
                   </div>
                   <div>
@@ -217,10 +233,12 @@ const AuthPage = ({ signUp }) => {
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
                       placeholder="Khan"
+                      required={false}
                     />
                   </div>
                 </div>
               )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email Address
@@ -235,6 +253,7 @@ const AuthPage = ({ signUp }) => {
                   required
                 />
               </div>
+
               {!isLogin && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -251,13 +270,14 @@ const AuthPage = ({ signUp }) => {
                         : "border-gray-300 focus:ring-red-500"
                     }`}
                     placeholder="ex: 6267051524"
-                    required
+                    required={!isLogin}
                   />
                   {errors.phone && (
                     <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
                   )}
                 </div>
               )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Password
@@ -272,8 +292,17 @@ const AuthPage = ({ signUp }) => {
                     placeholder="Enter your password"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((s) => !s)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                  </button>
                 </div>
               </div>
+
               {!isLogin && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -291,20 +320,19 @@ const AuthPage = ({ signUp }) => {
                           : "border-gray-300 focus:ring-red-500"
                       }`}
                       placeholder="Confirm your password"
-                      required
+                      required={!isLogin}
                     />
                     <button
                       type="button"
                       onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
+                        setShowConfirmPassword((s) => !s)
                       }
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      aria-label={
+                        showConfirmPassword ? "Hide confirm password" : "Show confirm password"
+                      }
                     >
-                      {showConfirmPassword ? (
-                        <Eye size={20} />
-                      ) : (
-                        <EyeOff size={20} />
-                      )}
+                      {showConfirmPassword ? <Eye size={20} /> : <EyeOff size={20} />}
                     </button>
                   </div>
                   {errors.confirmPassword && (
@@ -314,6 +342,7 @@ const AuthPage = ({ signUp }) => {
                   )}
                 </div>
               )}
+
               {isLogin && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
@@ -323,7 +352,7 @@ const AuthPage = ({ signUp }) => {
                       type="checkbox"
                       checked={formData.rememberMe}
                       onChange={handleInputChange}
-                      className="rounded size-4 border-gray-300 text-red-600 focus:ring-red-500"
+                      className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
                     />
                     <label
                       htmlFor="rememberMe"
@@ -341,6 +370,7 @@ const AuthPage = ({ signUp }) => {
                   </button>
                 </div>
               )}
+
               {!isLogin && (
                 <div className="flex items-start space-x-2">
                   <input
@@ -349,7 +379,7 @@ const AuthPage = ({ signUp }) => {
                     type="checkbox"
                     checked={formData.agreeToTerms}
                     onChange={handleInputChange}
-                    className="rounded size-4 border-gray-300 text-red-600 focus:ring-red-500 mt-1"
+                    className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500 mt-1"
                   />
                   <div>
                     <label
@@ -384,25 +414,25 @@ const AuthPage = ({ signUp }) => {
                   </div>
                 </div>
               )}
+
               <button
                 type="submit"
                 disabled={!isFormValid()}
                 className={`w-full py-4 rounded-xl font-semibold transition-all duration-300 text-lg ${
                   isFormValid()
-                    ? "bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 transform hover:scale-105 shadow-lg cursor-pointer"
+                    ? "bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 transform hover:scale-105 shadow-lg"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
               >
                 {isLogin ? "Sign In" : "Create Account"}
               </button>
             </form>
+
             <div className="mt-8 text-center">
               <p className="text-gray-600">
-                {isLogin
-                  ? "Don't have an account?"
-                  : "Already have an account?"}
+                {isLogin ? "Don't have an account?" : "Already have an account?"}
                 <button
-                  onClick={() => setIsLogin(!isLogin)}
+                  onClick={() => setIsLogin((s) => !s)}
                   className="ml-1 text-red-600 hover:text-red-700 font-semibold"
                 >
                   {isLogin ? "Sign up" : "Sign in"}
@@ -412,6 +442,7 @@ const AuthPage = ({ signUp }) => {
           </div>
         </div>
       </div>
+
       <TermsOfService
         showTerms={showTerms}
         setShowTerms={setShowTerms}

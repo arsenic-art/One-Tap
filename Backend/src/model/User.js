@@ -1,12 +1,10 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-// Regex Patterns
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{10,15}$/;
 const SPECIAL_CHAR_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
 
-// Schema Definition
 const UserSchema = new mongoose.Schema(
   {
     firstName: {

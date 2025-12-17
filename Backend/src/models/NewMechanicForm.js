@@ -2,10 +2,13 @@ const mongoose = require('mongoose');
 
 const mechanicApplicationSchema = new mongoose.Schema(
   {
-    // =====================
-    // BASIC DETAILS
-    // =====================
-    fullName: {
+    mechanicID : {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Mechanic',
+      required: true,
+      unique: true,
+    },
+    fullStoreName: {
       type: String,
       required: true,
       trim: true,
@@ -33,9 +36,6 @@ const mechanicApplicationSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // =====================
-    // PROFESSIONAL INFO
-    // =====================
     experienceYears: {
       type: Number,
       required: true,
@@ -48,6 +48,9 @@ const mechanicApplicationSchema = new mongoose.Schema(
       enum: ['Bike', 'Car', 'Both'],
       required: true,
     },
+
+    
+
 
     servicesProvided: [
       {
@@ -71,9 +74,6 @@ const mechanicApplicationSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // =====================
-    // AVAILABILITY
-    // =====================
     availability: {
       workingDays: {
         type: [String], // ["Mon", "Tue"]
@@ -88,9 +88,6 @@ const mechanicApplicationSchema = new mongoose.Schema(
       },
     },
 
-    // =====================
-    // ABOUT
-    // =====================
     bio: {
       type: String,
       required: true,
@@ -99,9 +96,6 @@ const mechanicApplicationSchema = new mongoose.Schema(
       maxlength: 1000,
     },
 
-    // =====================
-    // APPLICATION META
-    // =====================
     status: {
       type: String,
       enum: ['pending', 'reviewed', 'approved', 'rejected'],

@@ -5,7 +5,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9]{10,15}$/;
 const SPECIAL_CHAR_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
 
-const UserSchema = new mongoose.Schema(
+const MechanicSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
@@ -47,12 +47,27 @@ const UserSchema = new mongoose.Schema(
         message: "Password must contain at least one special character",
       },
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailVerificationToken: {
+      type: String,
+    },
+    emailVerificationExpiry: {
+      type: Date,
+    },
+    
+    profileImage: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );
 
-// Pre-save Hook for Hashing
-UserSchema.pre("save", async function (next) {
+MechanicSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   try {
     this.password = await bcrypt.hash(this.password, 10);
@@ -62,11 +77,9 @@ UserSchema.pre("save", async function (next) {
   }
 });
 
-// Password Check Method
-UserSchema.methods.CheckPassword = function (inputPassword) {
+MechanicSchema.methods.CheckPassword = function (inputPassword) {
   return bcrypt.compare(inputPassword, this.password);
 };
 
-// Export Model
-const User = mongoose.model("User", UserSchema);
-module.exports = User;
+const Mechanic = mongoose.model("Mechanic", MechanicSchema);
+module.exports = Mechanic;

@@ -15,9 +15,6 @@ const ServiceBookingSchema = new mongoose.Schema(
       required: true,
     },
 
-    // =====================
-    // SERVICE SELECTION
-    // =====================
     serviceType: {
       type: String,
       required: true,
@@ -36,12 +33,9 @@ const ServiceBookingSchema = new mongoose.Schema(
 
     basePrice: {
       type: Number,
-      required: true, // price at time of booking
+      required: true,
     },
 
-    // =====================
-    // URGENCY & SCHEDULING
-    // =====================
     urgency: {
       type: String,
       enum: ["Emergency", "Urgent", "Normal", "Flexible"],
@@ -54,7 +48,7 @@ const ServiceBookingSchema = new mongoose.Schema(
     },
 
     preferredTime: {
-      type: String, // "10:00 AM - 12:00 PM"
+      type: String, 
       required: true,
     },
 
@@ -66,9 +60,6 @@ const ServiceBookingSchema = new mongoose.Schema(
       type: String,
     },
 
-    // =====================
-    // OPTIONAL SERVICES
-    // =====================
     optionalServices: [
       {
         name: {
@@ -87,18 +78,12 @@ const ServiceBookingSchema = new mongoose.Schema(
       },
     ],
 
-    // =====================
-    // USER INPUT
-    // =====================
     problemDescription: {
       type: String,
       trim: true,
       maxlength: 1000,
     },
 
-    // =====================
-    // PRICING SUMMARY
-    // =====================
     rushFee: {
       type: Number,
       default: 0,
@@ -109,9 +94,6 @@ const ServiceBookingSchema = new mongoose.Schema(
       required: true,
     },
 
-    // =====================
-    // BOOKING STATUS
-    // =====================
     status: {
       type: String,
       enum: [

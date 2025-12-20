@@ -1,4 +1,4 @@
-const Mechanic = require("../models/mechanic");
+const Mechanic = require("../models/Mechanic");
 const generateToken = require("../utils/generateToken");
 const cloudinary = require("cloudinary").v2;
 const crypto = require("crypto");

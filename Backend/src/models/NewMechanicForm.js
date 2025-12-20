@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const mechanicApplicationSchema = new mongoose.Schema(
   {
-    mechanicID : {
+    mechanicID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Mechanic',
+      ref: "Mechanic",
       required: true,
       unique: true,
     },
@@ -15,19 +15,26 @@ const mechanicApplicationSchema = new mongoose.Schema(
       minlength: 2,
     },
 
+    storeImages: [
+      {
+        url: String,
+        public_id: String,
+      },
+    ],
+
     email: {
       type: String,
       required: true,
       trim: true,
       lowercase: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please use a valid email'],
+      match: [/^\S+@\S+\.\S+$/, "Please use a valid email"],
     },
 
     phone: {
       type: String,
       required: true,
       trim: true,
-      match: [/^[6-9]\d{9}$/, 'Please enter a valid Indian phone number'],
+      match: [/^[6-9]\d{9}$/, "Please enter a valid Indian phone number"],
     },
 
     city: {
@@ -45,26 +52,23 @@ const mechanicApplicationSchema = new mongoose.Schema(
 
     vehicleSpecialization: {
       type: String,
-      enum: ['Bike', 'Car', 'Both'],
+      enum: ["Bike", "Car", "Both"],
       required: true,
     },
-
-    
-
 
     servicesProvided: [
       {
         type: String,
         enum: [
-          'Emergency Roadside Assistance',
-          'Mobile Oil Change',
-          'Brake Inspection & Repair',
-          'Battery Replacement',
-          'Tire Services',
-          'Engine Diagnostics',
-          'AC System Service',
-          'Pre-Purchase Inspection',
-          'Preventive Maintenance',
+          "Emergency Roadside Assistance",
+          "Mobile Oil Change",
+          "Brake Inspection & Repair",
+          "Battery Replacement",
+          "Tire Services",
+          "Engine Diagnostics",
+          "AC System Service",
+          "Pre-Purchase Inspection",
+          "Preventive Maintenance",
         ],
       },
     ],
@@ -80,7 +84,7 @@ const mechanicApplicationSchema = new mongoose.Schema(
       },
       workingHours: {
         start: String, // "09:00"
-        end: String,   // "18:00"
+        end: String, // "18:00"
       },
       emergencyAvailable: {
         type: Boolean,
@@ -98,8 +102,8 @@ const mechanicApplicationSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['pending', 'reviewed', 'approved', 'rejected'],
-      default: 'pending',
+      enum: ["pending", "reviewed", "approved", "rejected"],
+      default: "approved",
     },
 
     adminNotes: {
@@ -112,9 +116,16 @@ const mechanicApplicationSchema = new mongoose.Schema(
   }
 );
 
+mechanicApplicationSchema.index({ city: 1 });
+mechanicApplicationSchema.index({ vehicleSpecialization: 1 });
+mechanicApplicationSchema.index({ servicesProvided: 1 });
+mechanicApplicationSchema.index({ experienceYears: -1 });
+mechanicApplicationSchema.index({ status: 1 });
+
 const MechanicApplication = mongoose.model(
-  'MechanicApplication',
+  "MechanicApplication",
   mechanicApplicationSchema
 );
 
 module.exports = MechanicApplication;
+ 

@@ -58,7 +58,7 @@ const registerUser = async (req, res) => {
       emailVerificationExpiry: Date.now() + 24 * 60 * 60 * 1000,
     });
 
-    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+    const verifyUrl = `${process.env.FRONTEND_URL}/api/user/verify-email?token=${token}`;
 
     await sendEmail({
       to: newUser.email,
@@ -98,6 +98,40 @@ const loginUser = async (req, res) => {
     }
 
     if (!user.isEmailVerified) {
+      if (
+        !user.emailVerificationExpiry ||
+        user.emailVerificationExpiry < Date.now()
+      ) {
+        const token = crypto.randomBytes(32).toString("hex");
+        const hashedToken = crypto
+          .createHash("sha256")
+          .update(token)
+          .digest("hex");
+
+        user.emailVerificationToken = hashedToken;
+        user.emailVerificationExpiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hrs
+        await user.save();
+
+        const verifyUrl = `${process.env.FRONTEND_URL}/api/user/verify-email?token=${token}`;
+
+        await sendEmail({
+          to: user.email,
+          subject: "Verify your OneTap account",
+          html: `
+            <h2>Hello ${user.firstName},</h2>
+            <p>Your previous verification link expired.</p>
+            <p>Please verify your email to activate your account.</p>
+            <a href="${verifyUrl}">Verify Email</a>
+            <p>This link expires in 24 hours.</p>
+          `,
+        });
+
+        return res.status(403).json({
+          message:
+            "Email not verified. A new verification link has been sent to your email.",
+        });
+      }
+
       return res.status(403).json({
         message: "Please verify your email before logging in",
       });

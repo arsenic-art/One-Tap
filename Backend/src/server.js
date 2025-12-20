@@ -1,14 +1,14 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
-const connectDB = require("./config/db");
+const connectDB = require("./config/database");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const servicesRoutes = require("./routes/services");
-const userRoutes = require("./routes/userAuth");
-const mechanicRoutes = require("./routes/mechanicAuth");
-const mechanicApplicationRoutes = require("./routes/newMechanicApplication");
-const serviceRequestRoutes = require("./routes/serviceRequestRoutes");
+const servicesRoutes = require("./routes/services.routes");
+const userRoutes = require("./routes/auth.routes");
+const mechanicRoutes = require("./routes/mechanicAuth.routes");
+const mechanicApplicationRoutes = require("./routes/mechanicApplication.routes");
+const serviceRequestRoutes = require("./routes/serviceRequest.routes");
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",

@@ -4,10 +4,10 @@ const router = express.Router();
 const {
   submitApplication,
   getMyApplication,
-} = require("../controllers/mechanicFormController");
+} = require("../controllers/mechanicApplicationController");
 
-const upload = require("../middlewares/upload");
-const { protectMechanic } = require("../middlewares/mechanicAuth");
+const upload = require("../middlewares/upload.middleware");
+const { protectMechanic } = require("../middlewares/mechanicAuth.middleware");
 
 router.post(
   "/",

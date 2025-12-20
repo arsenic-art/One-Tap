@@ -8,9 +8,9 @@ const {
   verifyUserEmail,
   forgotPassword,
   resetPassword,
-} = require("../controllers/userAuthController");
+} = require("../controllers/authController");
 
-const { userAuth } = require("../middlewares/userAuthMiddleware");
+const { userAuth } = require("../middlewares/auth.middleware");
 
 router.post("/register", registerUser);
 router.get("/verify-email", verifyUserEmail);

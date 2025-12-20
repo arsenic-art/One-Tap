@@ -1,4 +1,4 @@
-const MechanicApplication = require("../models/NewMechanicForm");
+const MechanicApplication = require("../models/MechanicApplication");
 
 const submitApplication = async (req, res) => {
   try {

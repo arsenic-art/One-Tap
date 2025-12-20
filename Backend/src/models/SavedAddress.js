@@ -69,7 +69,6 @@ const userSavedAddressSchema = new mongoose.Schema(
   }
 );
 
-// Ensure only ONE default address per user
 userSavedAddressSchema.index(
   { userId: 1, isDefault: 1 },
   { unique: true, partialFilterExpression: { isDefault: true } }

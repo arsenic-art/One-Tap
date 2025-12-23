@@ -1,18 +1,17 @@
-// src/components/AuthPage.jsx
 import React, { useState, useEffect } from "react";
-import Navbar from "./Navbar";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { TermsOfService, PrivacyPolicy } from "../pages/TermsAndPrivacyPage";
+import { useAuthStore } from "../store/useAuthStore";
 
-/**
- * Note: this component expects a prop `signUp` which is treated as the
- * initial "isLogin" boolean (kept for backward compatibility).
- * If you prefer clearer semantics, rename the prop where you call this component.
- */
+const API_BASE = "http://localhost:7777/api/";
+
 const AuthPage = ({ signUp }) => {
-  // Treat `signUp` as the initial isLogin value (keeps your previous setup intact).
   const [isLogin, setIsLogin] = useState(Boolean(signUp));
+  const navigate = useNavigate();
+  const loginSuccess = useAuthStore((s) => s.loginSuccess);
+
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -23,68 +22,41 @@ const AuthPage = ({ signUp }) => {
     agreeToTerms: false,
     rememberMe: false,
   });
+
   const [errors, setErrors] = useState({});
-  const navigate = useNavigate();
+  const [apiError, setApiError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [activeButton, setActiveButton] = useState("services"); // "services" | "mechanic"
+  const [activeButton, setActiveButton] = useState("services");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [isUser, setIsUser] = useState(true); // default role
-  const [isMechanic, setIsMechanic] = useState(false);
-  const [isLoggedIn] = useState(false); // actual login state should come from auth store/context
+  const [isUser, setIsUser] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  // sync agreeToTerms when both modals are accepted
   useEffect(() => {
-    if (termsAccepted && privacyAccepted) {
-      setFormData((prev) => ({ ...prev, agreeToTerms: true }));
-    } else if (!termsAccepted || !privacyAccepted) {
-      setFormData((prev) => ({ ...prev, agreeToTerms: false }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      agreeToTerms: termsAccepted && privacyAccepted,
+    }));
   }, [termsAccepted, privacyAccepted]);
 
-  // lock body scroll while modals are open
   useEffect(() => {
-    if (showTerms || showPrivacy) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    document.body.style.overflow =
+      showTerms || showPrivacy ? "hidden" : "unset";
+    return () => (document.body.style.overflow = "unset");
   }, [showTerms, showPrivacy]);
 
-  // escape key closes modals
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === "Escape") {
-        setShowTerms(false);
-        setShowPrivacy(false);
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, []);
-
-  // Keep activeButton and role in sync
-  useEffect(() => {
-    if (activeButton === "mechanic") {
-      setIsMechanic(true);
-      setIsUser(false);
-    } else {
-      setIsMechanic(false);
-      setIsUser(true);
-    }
+    setIsUser(activeButton !== "mechanic");
   }, [activeButton]);
 
-  // If parent toggles the prop, update local isLogin and reset active button
   useEffect(() => {
     setIsLogin(Boolean(signUp));
-    // keep role as-is, but reset UI toggle to 'services'
     setActiveButton("services");
+    setApiError("");
+    setErrors({});
   }, [signUp]);
 
   const handleInputChange = (e) => {
@@ -93,352 +65,386 @@ const AuthPage = ({ signUp }) => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: null }));
-    }
+    if (errors[name]) setErrors((p) => ({ ...p, [name]: null }));
+    if (apiError) setApiError("");
   };
 
-  // validation effect for password match and phone
   useEffect(() => {
     const newErrors = {};
-    if (
-      !isLogin &&
-      formData.password &&
-      formData.confirmPassword &&
-      formData.password !== formData.confirmPassword
-    ) {
-      newErrors.confirmPassword = "Passwords do not match.";
-    }
-    if (!isLogin && formData.phone && !/^\d{10}$/.test(formData.phone)) {
-      newErrors.phone = "Please enter a valid 10-digit phone number.";
+    const SPECIAL_CHAR_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
+
+    if (!isLogin) {
+      if (formData.password && formData.password.length < 6) {
+        newErrors.password = "Password must be at least 6 characters.";
+      } else if (
+        formData.password &&
+        !SPECIAL_CHAR_REGEX.test(formData.password)
+      ) {
+        newErrors.password = "Must contain at least one special character.";
+      }
+
+      if (
+        formData.password &&
+        formData.confirmPassword &&
+        formData.password !== formData.confirmPassword
+      ) {
+        newErrors.confirmPassword = "Passwords do not match.";
+      }
+
+      if (formData.phone && !/^\d{10,15}$/.test(formData.phone)) {
+        newErrors.phone = "Phone must be 10-15 digits.";
+      }
     }
     setErrors(newErrors);
-  }, [formData.password, formData.confirmPassword, formData.phone, isLogin]);
+  }, [formData, isLogin]);
 
   const isFormValid = () => {
-    const hasErrors = Object.values(errors).some((error) => error != null);
-    if (hasErrors) return false;
-
-    if (isLogin) {
-      return formData.email.trim() !== "" && formData.password.trim() !== "";
-    } else {
-      return (
-        formData.email.trim() !== "" &&
-        formData.password.trim() !== "" &&
-        formData.confirmPassword.trim() !== "" &&
-        formData.firstName.trim() !== "" &&
-        formData.phone.trim() !== "" &&
-        formData.agreeToTerms
-      );
-    }
+    if (Object.values(errors).some(Boolean)) return false;
+    if (isLogin) return formData.email && formData.password;
+    return (
+      formData.email &&
+      formData.password &&
+      formData.confirmPassword &&
+      formData.firstName &&
+      formData.phone &&
+      formData.agreeToTerms
+    );
   };
 
-  // central submit handler: performs navigation after validation
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isFormValid()) {
-      console.error("Submission failed: Form is invalid.", errors);
-      return;
-    }
+    if (!isFormValid()) return;
 
-    // simulate success and navigate based on role & mode
-    // replace this with actual API/auth calls
-    if (isLogin) {
-      // Login success -> redirect to relevant page
-      if (isUser) {
-        navigate("/services");
-      } else {
-        navigate("/addmechanic");
+    setLoading(true);
+    setApiError("");
+
+    try {
+      const currentBase = isUser
+        ? "http://localhost:7777/api/user"
+        : "http://localhost:7777/api/mechanic";
+
+      const endpoint = isLogin ? "/login" : "/register";
+
+      const payload = isLogin
+        ? { email: formData.email, password: formData.password }
+        : {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phoneNumber: formData.phone,
+            password: formData.password,
+            role: isUser ? "user" : "mechanic",
+          };
+      const res = await fetch(`${currentBase}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setApiError(data.message || "Authentication failed");
+        return;
       }
-      console.log("Login attempt:", formData);
-    } else {
-      // Signup success
-      if (isUser) {
-        navigate("/services");
-      } else {
-        navigate("/addmechanic");
-      }
-      console.log("Signup attempt:", formData);
+
+      loginSuccess(data); 
+      navigate(isUser ? "/services" : "/dashboard");
+    } catch (err) {
+      setApiError("Connection failed. Check your backend server.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <>
-      <Navbar isUser={isUser} isLoggedIn={isLoggedIn} />
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center p-4">
-        <div className="flex items-center justify-center p-4">
-          <div className="bg-white rounded-full shadow-lg flex p-2 space-x-2 border border-gray-200">
-            <button
-              onClick={() => setActiveButton("services")}
-              className={`px-6 py-3 rounded-full text-lg font-semibold transition-all duration-300 ease-in-out ${
-                activeButton === "services"
-                  ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-md"
-                  : "bg-transparent text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              Get Our Services
-            </button>
-
-            <button
-              onClick={() => setActiveButton("mechanic")}
-              className={`px-6 py-3 rounded-full text-lg font-semibold transition-all duration-300 ease-in-out ${
-                activeButton === "mechanic"
-                  ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-md"
-                  : "bg-transparent text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {isLogin ? "Sign in as Mechanic" : "Create Mechanic Account"}
-            </button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center p-4">
+      <div className="flex items-center justify-center p-4">
+        <div className="bg-white rounded-full shadow-lg flex p-2 space-x-2 border border-gray-200">
+          <button
+            onClick={() => setActiveButton("services")}
+            className={`px-6 py-3 rounded-full text-lg font-semibold transition-all duration-300 ${
+              activeButton === "services"
+                ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-md"
+                : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            Get Our Services
+          </button>
+          <button
+            onClick={() => setActiveButton("mechanic")}
+            className={`px-6 py-3 rounded-full text-lg font-semibold transition-all duration-300 ${
+              activeButton === "mechanic"
+                ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-md"
+                : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            {isLogin ? "Sign in as Mechanic" : "Create Mechanic Account"}
+          </button>
         </div>
+      </div>
 
-        <div className="w-full max-w-lg mx-auto">
-          <div className="bg-white rounded-3xl shadow-2xl p-8">
-            <div className="text-center mb-8">
-              <div className="text-5xl mb-4">🔧</div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                {isLogin ? "Sign In" : "Create Account"}
-              </h2>
-              <p className="text-gray-600">
-                {isLogin ? "Access your OneTap account" : "Join the revolution"}
-              </p>
+      <div className="w-full max-w-lg mx-auto">
+        <div className="bg-white rounded-3xl shadow-2xl p-8">
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-4">🔧</div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              {isLogin ? "Sign In" : "Create Account"}
+            </h2>
+            <p className="text-gray-600">
+              {isLogin ? "Access your OneTap account" : "Join the revolution"}
+            </p>
+          </div>
+
+          {apiError && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl flex items-center gap-3 animate-shake">
+              <AlertCircle className="text-red-500 shrink-0" size={20} />
+              <p className="text-red-700 text-sm font-medium">{apiError}</p>
             </div>
+          )}
 
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              {/* Signup-only fields */}
-              {!isLogin && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
-                      placeholder="Tulsidas"
-                      required={!isLogin}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
-                      placeholder="Khan"
-                      required={false}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300"
-                  placeholder="abc@onetap.com"
-                  required
-                />
-              </div>
-
-              {!isLogin && (
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            {!isLogin && (
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number
+                    First Name
                   </label>
                   <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-300 ${
-                      errors.phone
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-red-500"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all ${
+                      errors.firstName ? "border-red-500" : "border-gray-300"
                     }`}
-                    placeholder="ex: 6267051524"
-                    required={!isLogin}
+                    placeholder="Tulsidas"
                   />
-                  {errors.phone && (
-                    <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 pr-12"
-                    placeholder="Enter your password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
-                  </button>
-                </div>
-              </div>
-
-              {!isLogin && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-all duration-300 pr-12 ${
-                        errors.confirmPassword
-                          ? "border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-red-500"
-                      }`}
-                      placeholder="Confirm your password"
-                      required={!isLogin}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword((s) => !s)
-                      }
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                      aria-label={
-                        showConfirmPassword ? "Hide confirm password" : "Show confirm password"
-                      }
-                    >
-                      {showConfirmPassword ? <Eye size={20} /> : <EyeOff size={20} />}
-                    </button>
-                  </div>
-                  {errors.confirmPassword && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.confirmPassword}
+                  {errors.firstName && (
+                    <p className="text-red-500 text-xs mt-1 font-medium">
+                      {errors.firstName}
                     </p>
                   )}
                 </div>
-              )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 transition-all"
+                    placeholder="Khan"
+                  />
+                </div>
+              </div>
+            )}
 
-              {isLogin && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <input
-                      id="rememberMe"
-                      name="rememberMe"
-                      type="checkbox"
-                      checked={formData.rememberMe}
-                      onChange={handleInputChange}
-                      className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
-                    />
-                    <label
-                      htmlFor="rememberMe"
-                      className="ml-2 block text-sm text-gray-700"
-                    >
-                      Remember me
-                    </label>
-                  </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all ${
+                  errors.email ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="abc@onetap.com"
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1 font-medium">
+                  {errors.email}
+                </p>
+              )}
+            </div>
+
+            {!isLogin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all ${
+                    errors.phone || errors.phoneNumber
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  }`}
+                  placeholder="ex: 6267051524"
+                />
+                {(errors.phone || errors.phoneNumber) && (
+                  <p className="text-red-500 text-xs mt-1 font-medium">
+                    {errors.phone || errors.phoneNumber}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 transition-all pr-12 ${
+                    errors.password ? "border-red-500" : "border-gray-300"
+                  }`}
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                >
+                  {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1 font-medium">
+                  {errors.password}
+                </p>
+              )}
+            </div>
+
+            {!isLogin && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all pr-12 ${
+                      errors.confirmPassword
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    }`}
+                    placeholder="Confirm password"
+                  />
                   <button
-                    onClick={() => navigate("/forgot-password")}
                     type="button"
-                    className="text-sm cursor-pointer text-red-600 hover:text-red-700 font-medium"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                   >
-                    Forgot password?
+                    {showConfirmPassword ? (
+                      <Eye size={20} />
+                    ) : (
+                      <EyeOff size={20} />
+                    )}
                   </button>
                 </div>
-              )}
+                {errors.confirmPassword && (
+                  <p className="text-red-500 text-xs mt-1 font-medium">
+                    {errors.confirmPassword}
+                  </p>
+                )}
+              </div>
+            )}
 
-              {!isLogin && (
-                <div className="flex items-start space-x-2">
+            {isLogin ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
                   <input
-                    id="agreeToTerms"
-                    name="agreeToTerms"
+                    id="rememberMe"
+                    name="rememberMe"
                     type="checkbox"
-                    checked={formData.agreeToTerms}
+                    checked={formData.rememberMe}
                     onChange={handleInputChange}
-                    className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500 mt-1"
+                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
                   />
-                  <div>
-                    <label
-                      htmlFor="agreeToTerms"
-                      className="text-sm text-gray-700"
-                    >
-                      I agree to the{" "}
-                      <button
-                        type="button"
-                        onClick={() => setShowTerms(true)}
-                        className={`font-medium underline ${
-                          termsAccepted
-                            ? "text-green-600"
-                            : "text-red-600 hover:text-red-700"
-                        }`}
-                      >
-                        Terms of Service
-                      </button>{" "}
-                      and{" "}
-                      <button
-                        type="button"
-                        onClick={() => setShowPrivacy(true)}
-                        className={`font-medium underline ${
-                          privacyAccepted
-                            ? "text-green-600"
-                            : "text-red-600 hover:text-red-700"
-                        }`}
-                      >
-                        Privacy Policy
-                      </button>
-                    </label>
-                  </div>
+                  <label
+                    htmlFor="rememberMe"
+                    className="ml-2 text-sm text-gray-700"
+                  >
+                    Remember me
+                  </label>
                 </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={!isFormValid()}
-                className={`w-full py-4 rounded-xl font-semibold transition-all duration-300 text-lg ${
-                  isFormValid()
-                    ? "bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 transform hover:scale-105 shadow-lg"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
-              >
-                {isLogin ? "Sign In" : "Create Account"}
-              </button>
-            </form>
-
-            <div className="mt-8 text-center">
-              <p className="text-gray-600">
-                {isLogin ? "Don't have an account?" : "Already have an account?"}
                 <button
-                  onClick={() => setIsLogin((s) => !s)}
-                  className="ml-1 text-red-600 hover:text-red-700 font-semibold"
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-sm text-red-600 hover:text-red-700 font-medium"
                 >
-                  {isLogin ? "Sign up" : "Sign in"}
+                  Forgot password?
                 </button>
-              </p>
-            </div>
+              </div>
+            ) : (
+              <div className="flex items-start space-x-2">
+                <input
+                  id="agreeToTerms"
+                  name="agreeToTerms"
+                  type="checkbox"
+                  checked={formData.agreeToTerms}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded mt-1"
+                />
+                <div className="text-sm text-gray-700">
+                  I agree to the{" "}
+                  <button
+                    type="button"
+                    onClick={() => setShowTerms(true)}
+                    className={`font-medium underline ${
+                      termsAccepted ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    Terms of Service
+                  </button>{" "}
+                  and{" "}
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivacy(true)}
+                    className={`font-medium underline ${
+                      privacyAccepted ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    Privacy Policy
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={!isFormValid() || loading}
+              className={`w-full py-4 rounded-xl font-semibold transition-all duration-300 text-lg ${
+                isFormValid() && !loading
+                  ? "bg-gradient-to-r from-red-600 to-orange-500 text-white hover:scale-105 shadow-lg"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              {loading
+                ? "Processing..."
+                : isLogin
+                ? "Sign In"
+                : "Create Account"}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-gray-600">
+              {isLogin ? "Don't have an account?" : "Already have an account?"}
+              <button
+                onClick={() => setIsLogin(!isLogin)}
+                className="ml-1 text-red-600 hover:text-red-700 font-semibold"
+              >
+                {isLogin ? "Sign up" : "Sign in"}
+              </button>
+            </p>
           </div>
         </div>
       </div>
@@ -453,7 +459,7 @@ const AuthPage = ({ signUp }) => {
         setShowPrivacy={setShowPrivacy}
         setPrivacyAccepted={setPrivacyAccepted}
       />
-    </>
+    </div>
   );
 };
 

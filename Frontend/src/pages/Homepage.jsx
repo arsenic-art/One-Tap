@@ -8,11 +8,8 @@ import { MechanicApplicationTerms } from './MechanicTerns';
 const Homepage = () => {
   return (
     <>
-      <Navbar />
       <HeroSection />
       <ServiceHighlights />
-      {/* Add more sections like FaultCategories, Testimonials later */}
-      {/* <MechanicApplicationTerms/> */}
       <Footer />
     </>
   );

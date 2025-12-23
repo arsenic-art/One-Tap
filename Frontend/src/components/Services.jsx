@@ -1,1079 +1,760 @@
-import React, { useState, useEffect } from 'react';
-import { Car, User, MapPin, Phone, Mail, Calendar, Clock, CheckCircle, AlertCircle, ArrowLeft, Star } from 'lucide-react';
-import Navbar from './Navbar';
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  Search,
+  SlidersHorizontal,
+  MapPin,
+  Car,
+  Bike,
+  Wrench,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  Send,
+} from "lucide-react";
 
-// BookServicePage Component (embedded)
-const Services = ({ selectedService = null, onBack }) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [announceMessage, setAnnounceMessage] = useState('');
+const VEHICLE_TYPES = ["Bike", "Car", "Both"];
 
-  // Form data state
-  const [bookingData, setBookingData] = useState({
-    // User Details
-    fullName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    zipCode: '',
-    
-    // Vehicle Details
-    vehicleMake: '',
-    vehicleModel: '',
-    vehicleYear: '',
-    vehicleColor: '',
-    licensePlate: '',
-    mileage: '',
-    
-    // Service Details
-    serviceType: selectedService?.title || '',
-    serviceCategory: selectedService?.category || '',
-    urgency: 'normal',
-    preferredDate: '',
-    preferredTime: '',
-    alternateDate: '',
-    alternateTime: '',
-    
-    // Additional Information
-    problemDescription: '',
-    additionalServices: [],
-    specialInstructions: '',
-    
-    // Pricing
-    estimatedPrice: selectedService?.price || '',
-    
-    // Contact Preferences
-    contactPreference: 'phone',
-    marketingConsent: false
-  });
+const SERVICE_TYPES = [
+  "Emergency Roadside Assistance",
+  "Mobile Oil Change",
+  "Brake Inspection & Repair",
+  "Battery Replacement",
+  "Tire Services",
+  "Engine Diagnostics",
+  "AC System Service",
+  "Pre-Purchase Inspection",
+  "Preventive Maintenance",
+];
 
-  // Available services for general booking (if no service is pre-selected)
-  const allServices = [
-    {
-      id: 1,
-      title: "Emergency Roadside Assistance",
-      category: "emergency",
-      price: "From $49",
-      icon: "🚨"
-    },
-    {
-      id: 2,
-      title: "Mobile Oil Change",
-      category: "maintenance",
-      price: "From $79",
-      icon: "🛢️"
-    },
-    {
-      id: 3,
-      title: "Brake Inspection & Repair",
-      category: "repair",
-      price: "From $129",
-      icon: "🛑"
-    },
-    {
-      id: 4,
-      title: "Battery Replacement",
-      category: "maintenance",
-      price: "From $89",
-      icon: "🔋"
-    },
-    {
-      id: 5,
-      title: "Tire Services",
-      category: "maintenance",
-      price: "From $39",
-      icon: "🛞"
-    },
-    {
-      id: 6,
-      title: "Engine Diagnostics",
-      category: "repair",
-      price: "From $99",
-      icon: "🔧"
-    },
-    {
-      id: 7,
-      title: "AC System Service",
-      category: "repair",
-      price: "From $149",
-      icon: "❄️"
-    },
-    {
-      id: 8,
-      title: "Pre-Purchase Inspection",
-      category: "inspection",
-      price: "From $199",
-      icon: "🔍"
-    },
-    {
-      id: 9,
-      title: "Preventive Maintenance",
-      category: "maintenance",
-      price: "From $159",
-      icon: "🛡️"
-    }
-  ];
+const DEFAULT_LIMIT = 10;
 
-  // Additional services that can be added
-  const additionalServicesOptions = [ // Renamed to avoid conflict with state variable
-    { id: 'oil-check', name: 'Oil Level Check', price: '+$15' },
-    { id: 'fluid-topoff', name: 'Fluid Top-off', price: '+$25' },
-    { id: 'battery-test', name: 'Battery Test', price: '+$20' },
-    { id: 'tire-pressure', name: 'Tire Pressure Check', price: '+$10' },
-    { id: 'visual-inspection', name: 'Visual Inspection', price: '+$30' }
-  ];
+const FindMechanicAndRequest = () => {
+  const [city, setCity] = useState("");
+  const [vehicle, setVehicle] = useState("");
+  const [service, setService] = useState("");
+  const [problemDescription, setProblemDescription] = useState("");
 
-  const timeSlots = [
-    '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
-    '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM',
-    '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM'
-  ];
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit] = useState(DEFAULT_LIMIT);
 
-  const urgencyOptions = [
-    { value: 'emergency', label: 'Emergency (ASAP)', icon: '🚨', color: 'text-red-600' },
-    { value: 'urgent', label: 'Urgent (Same Day)', icon: '⚡', color: 'text-orange-600' },
-    { value: 'normal', label: 'Normal (1-3 Days)', icon: '📅', color: 'text-green-600' },
-    { value: 'flexible', label: 'Flexible (This Week)', icon: '⏰', color: 'text-blue-600' }
-  ];
+  const [mechanics, setMechanics] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
 
-  // Get current date for date input minimum
-  const getCurrentDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
+
+  const [selectedMechanic, setSelectedMechanic] = useState(null);
+  const [vehicleTypeForRequest, setVehicleTypeForRequest] = useState("");
+  const [serviceTypeForRequest, setServiceTypeForRequest] = useState("");
+  const [message, setMessage] = useState("");
+  const [requestError, setRequestError] = useState("");
+  const [requestSuccess, setRequestSuccess] = useState("");
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+
+  const buildMechanicQueryString = () => {
+    const params = new URLSearchParams();
+    if (city.trim()) params.append("city", city.trim());
+    if (vehicle) params.append("vehicle", vehicle);
+    if (service) params.append("service", service);
+    params.append("page", page.toString());
+    params.append("limit", limit.toString());
+    return params.toString();
   };
 
-  // Handle input changes
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setBookingData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
+  const fetchMechanics = async () => {
+    setIsLoading(true);
+    setLoadError("");
 
-  // Handle additional services
-  const handleAdditionalServiceChange = (serviceId) => {
-    setBookingData(prev => ({
-      ...prev,
-      additionalServices: prev.additionalServices.includes(serviceId)
-        ? prev.additionalServices.filter(s => s !== serviceId)
-        : [...prev.additionalServices, serviceId]
-    }));
-  };
+    try {
+      const qs = buildMechanicQueryString();
+      const res = await fetch(`http://localhost:7777/api/mechanicsList?${qs}`);
+      const json = await res.json();
 
-  // Validate current step
-  const validateStep = (step) => {
-    const newErrors = {};
-    
-    if (step === 1) {
-      if (!bookingData.fullName.trim()) newErrors.fullName = 'Full name is required';
-      if (!bookingData.email.trim()) newErrors.email = 'Email is required';
-      if (!bookingData.phone.trim()) newErrors.phone = 'Phone number is required';
-      if (!bookingData.address.trim()) newErrors.address = 'Address is required';
-      if (!bookingData.city.trim()) newErrors.city = 'City is required';
-      if (!bookingData.zipCode.trim()) newErrors.zipCode = 'ZIP code is required';
-    } else if (step === 2) {
-      if (!bookingData.vehicleMake.trim()) newErrors.vehicleMake = 'Vehicle make is required';
-      if (!bookingData.vehicleModel.trim()) newErrors.vehicleModel = 'Vehicle model is required';
-      if (!bookingData.vehicleYear.trim()) newErrors.vehicleYear = 'Vehicle year is required';
-    } else if (step === 3) {
-      if (!selectedService && !bookingData.serviceType) newErrors.serviceType = 'Service type is required';
-      if (!bookingData.preferredDate) newErrors.preferredDate = 'Preferred date is required';
-      if (!bookingData.preferredTime) newErrors.preferredTime = 'Preferred time is required';
-    }
+      if (!res.ok) {
+        throw new Error(
+          json.error || json.message || "Failed to load mechanics"
+        );
+      }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+      setMechanics(json.data || []);
 
-  // Handle next step
-  const handleNextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => prev + 1);
-      setAnnounceMessage(`Moved to step ${currentStep + 1}`);
-    } else {
-      setAnnounceMessage('Please correct the errors before proceeding.');
+      if (json.pagination) {
+        const p = json.pagination;
+        setPage(p.page || 1);
+        setTotalCount(p.total || 0);
+        setTotalPages(p.totalPages || 1);
+        setHasNextPage(!!p.hasNextPage);
+        setHasPrevPage(!!p.hasPrevPage);
+      } else {
+        setTotalCount((json.data || []).length);
+        setTotalPages(1);
+        setHasNextPage(false);
+        setHasPrevPage(false);
+      }
+    } catch (err) {
+      setLoadError(err.message || "Something went wrong");
+      setMechanics([]);
+      setTotalCount(0);
+      setTotalPages(1);
+      setHasNextPage(false);
+      setHasPrevPage(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Handle previous step
-  const handlePrevStep = () => {
-    setCurrentStep(prev => prev - 1);
-    setAnnounceMessage(`Moved back to step ${currentStep - 1}`);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  useEffect(() => {
+    if (hasSearched) {
+      fetchMechanics();
+    }
+  }, [city, vehicle, service, page, limit]);
+
+  const handleSearchMechanics = () => {
+    setHasSearched(true);
+    setPage(1);
+    fetchMechanics();
   };
 
-  // Handle form submission
-  const handleSubmit = async () => {
-    if (!validateStep(currentStep)) {
-      setAnnounceMessage('Please correct the errors before submitting.');
+  const handleClearAll = () => {
+    setCity("");
+    setVehicle("");
+    setService("");
+    setProblemDescription("");
+    setSearch("");
+    setHasSearched(false);
+    setPage(1);
+    setMechanics([]);
+    setTotalCount(0);
+    setTotalPages(1);
+    setSelectedMechanic(null);
+    setRequestError("");
+    setRequestSuccess("");
+  };
+
+  const handlePrevPage = () => {
+    if (hasPrevPage) {
+      setPage((p) => Math.max(1, p - 1));
+    }
+  };
+
+  const handleNextPage = () => {
+    if (hasNextPage) {
+      setPage((p) => p + 1);
+    }
+  };
+
+  // local filtering for search in results
+  const filteredMechanics = useMemo(() => {
+    if (!search.trim()) return mechanics;
+    const q = search.toLowerCase();
+    return mechanics.filter((m) => {
+      return (
+        (m.fullStoreName && m.fullStoreName.toLowerCase().includes(q)) ||
+        (m.city && m.city.toLowerCase().includes(q)) ||
+        (m.bio && m.bio.toLowerCase().includes(q)) ||
+        (m.servicesProvided &&
+          m.servicesProvided.join(" ").toLowerCase().includes(q))
+      );
+    });
+  }, [mechanics, search]);
+
+  // available services for this mechanic only
+  const availableServicesForRequest = useMemo(() => {
+    if (selectedMechanic?.servicesProvided?.length) {
+      return SERVICE_TYPES.filter((s) =>
+        selectedMechanic.servicesProvided.includes(s)
+      );
+    }
+    return SERVICE_TYPES;
+  }, [selectedMechanic]);
+  const maxLength = 2000;
+  const openRequestForm = (mechanic) => {
+    setSelectedMechanic(mechanic);
+    setRequestError("");
+    setRequestSuccess("");
+    setVehicleTypeForRequest("");
+    setServiceTypeForRequest("");
+
+    // prefill message from earlier description
+    const pieces = [];
+    if (service) {
+      pieces.push(`Requested service: ${service}.`);
+    }
+    if (vehicle) {
+      pieces.push(`Vehicle type: ${vehicle}.`);
+    }
+    if (problemDescription.trim()) {
+      pieces.push(`Details: ${problemDescription.trim()}`);
+    }
+    setMessage(pieces.join(" "));
+  };
+
+    const handleSubmitRequest = async (e) => {
+    e.preventDefault();
+    setRequestError("");
+    setRequestSuccess("");
+
+    if (!selectedMechanic?._id) {
+      setRequestError("Please select a mechanic first.");
       return;
     }
 
-    setIsSubmitting(true);
-    setAnnounceMessage('Submitting your booking...');
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      setAnnounceMessage('Booking confirmed!');
-    }, 2000);
+    if (!vehicleTypeForRequest || !serviceTypeForRequest) {
+      setRequestError("Please select both vehicle type and service type.");
+      return;
+    }
+
+    // extra confirmation that it can't be edited
+    const ok = window.confirm(
+      "Once you send this request, the message cannot be edited.\n\nAre you sure you want to submit?"
+    );
+    if (!ok) return;
+
+    setIsSubmittingRequest(true);
+
+    try {
+      const res = await fetch(
+        "http://localhost:7777/api/service-requests/requests",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            mechanicId: selectedMechanic.mechanicID, 
+            problemType: vehicleTypeForRequest,
+            serviceType: serviceTypeForRequest,
+            message,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to create request");
+      }
+
+      setRequestSuccess("Service request sent to mechanic.");
+    } catch (err) {
+      setRequestError(err.message || "Something went wrong");
+    } finally {
+      setIsSubmittingRequest(false);
+    }
   };
 
-  // Announce messages for accessibility
-  useEffect(() => {
-    if (announceMessage) {
-      const liveRegion = document.getElementById('live-region');
-      if (liveRegion) {
-        liveRegion.textContent = announceMessage;
-      }
-      // Clear message after a short delay
-      const timer = setTimeout(() => setAnnounceMessage(''), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [announceMessage]);
-
-
-  // Success page
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-2xl p-12 text-center max-w-md w-full">
-          <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle size={40} className="text-white" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Booking Confirmed!</h2>
-          <p className="text-gray-600 mb-6">
-            Your service request has been submitted successfully. We'll contact you shortly to confirm the details.
-          </p>
-          <div className="bg-blue-50 rounded-xl p-4 mb-6">
-            <p className="text-blue-800 text-sm">
-              📧 Confirmation email sent<br/>
-              📞 We'll call you within 30 minutes<br/>
-              🔧 Mechanic will arrive on scheduled time
-            </p>
-          </div>
-          <div className="space-y-3">
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300"
-            >
-              Book Another Service
-            </button>
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="w-full border-2 border-red-600 text-red-600 px-6 py-3 rounded-xl font-semibold hover:bg-red-600 hover:text-white transition-all duration-300"
-              >
-                Back to Services
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <>
-    <Navbar/>
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Live region for accessibility announcements */}
-      <div id="live-region" aria-live="polite" className="sr-only">
-        {announceMessage}
+      {/* Header */}
+      <div className="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white py-6">
+        <div className="max-w-5xl mx-auto px-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">
+              Find a Mechanic &amp; Send Request
+            </h1>
+            <p className="text-sm opacity-90">
+              Tell us what you need, browse matching mechanics, then send a
+              service request.
+            </p>
+          </div>
+          <Wrench size={40} className="opacity-90" />
+        </div>
       </div>
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {onBack && (
-                <button
-                  onClick={onBack}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors duration-300"
-                  aria-label="Back to Services"
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+        {/* Step 1: Problem + search filters */}
+        <div className="bg-white rounded-3xl shadow-2xl p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            1. What do you need help with?
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            {/* City */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                City *
+              </label>
+              <div className="relative">
+                <MapPin
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="e.g., Indore"
+                  className="w-full pl-8 pr-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Vehicle type */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Vehicle Type (optional)
+              </label>
+              <select
+                value={vehicle}
+                onChange={(e) => setVehicle(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm"
+              >
+                <option value="">Any Vehicle</option>
+                {VEHICLE_TYPES.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Service type */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Service (optional, used to match mechanics)
+              </label>
+              <select
+                value={service}
+                onChange={(e) => setService(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm"
+              >
+                <option value="">Any Service</option>
+                {SERVICE_TYPES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Local search (for results later) */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Search in results
+              </label>
+              <div className="relative">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Filter by name, city, or service..."
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Problem description (limited) */}
+          <div className="mt-4">
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Briefly describe the issue (optional)
+            </label>
+            <div className="relative">
+              <textarea
+                value={problemDescription}
+                onChange={(e) => setProblemDescription(e.target.value)}
+                rows={3}
+                maxLength={300}
+                className="w-full px-3 py-2 pr-12 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm"
+                placeholder="Example: Bike not starting, clicking sound when pressing the starter..."
+              />
+              <div className="pointer-events-none absolute bottom-2 right-3 text-xs font-medium bg-white/80 px-1 rounded">
+                <span
+                  className={
+                    problemDescription.length >= 300
+                      ? "text-red-500"
+                      : "text-gray-400"
+                  }
                 >
-                  <ArrowLeft size={24} />
-                </button>
-              )}
-              <div>
-                <h1 className="text-3xl font-bold">Book Your Service</h1>
-                <p className="opacity-90">
-                  {selectedService ? `${selectedService.title} - ${selectedService.price}` : 'Choose your service and schedule appointment'}
+                  {problemDescription.length}
+                </span>
+                /300
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-500 mt-1">
+              This description will be pre-filled when you send the request.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between mt-6">
+            <button
+              type="button"
+              onClick={handleClearAll}
+              className="border-2 border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-all duration-300"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={handleSearchMechanics}
+              disabled={!city.trim()}
+              className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              <SlidersHorizontal size={16} className="mr-2" />
+              Find Mechanics
+            </button>
+          </div>
+        </div>
+
+        {/* Step 2: Mechanics list */}
+        <div className="bg-white rounded-3xl shadow-2xl p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            2. Choose a mechanic
+          </h2>
+
+          {isLoading && (
+            <div className="flex items-center justify-center py-8 text-gray-600">
+              <Loader2 className="animate-spin mr-2" size={20} />
+              <span>Loading mechanics...</span>
+            </div>
+          )}
+
+          {!isLoading && loadError && (
+            <div className="flex items-center bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl mb-4">
+              <AlertCircle size={18} className="mr-2" />
+              <span className="text-sm">{loadError}</span>
+            </div>
+          )}
+
+          {!isLoading &&
+            !loadError &&
+            hasSearched &&
+            filteredMechanics.length === 0 && (
+              <div className="text-center py-8 text-gray-600">
+                <p className="font-semibold mb-1">No mechanics found</p>
+                <p className="text-sm">
+                  Try changing the city, vehicle type, or service filters.
                 </p>
               </div>
-            </div>
-            <Car size={48} className="opacity-80" />
-          </div>
-        </div>
-      </div>
+            )}
 
-      {/* Progress Bar */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between" role="progressbar" aria-valuenow={currentStep} aria-valuemin="1" aria-valuemax="4">
-            {[1, 2, 3, 4].map((step) => (
-              <div key={step} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                  currentStep >= step
-                    ? 'bg-red-600 text-white'
-                    : 'bg-gray-200 text-gray-500'
-                }`} aria-current={currentStep === step ? "step" : false}>
-                  {currentStep > step ? '✓' : step}
-                </div>
-                {step <= 4 && (
-                  <div className={`w-16 h-1  ${
-                    currentStep > step ? 'bg-red-600' : 'bg-gray-200'
-                  }`}></div>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-sm text-gray-600 mt-2 ">
-            <span>Contact Info</span>
-            <span>Vehicle Details</span>
-            <span>Service & Schedule</span>
-            <span >Review & Book</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Form Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          
-          {/* Step 1: Contact Information */}
-          {currentStep === 1 && (
-            <div className="p-8" role="tabpanel" aria-labelledby="step1-tab">
-              <div className="text-center mb-8">
-                <User size={48} className="mx-auto mb-4 text-red-600" />
-                <h2 id="step1-tab" className="text-2xl font-bold text-gray-900 mb-2">Contact Information</h2>
-                <p className="text-gray-600">Let us know how to reach you</p>
+          {!isLoading && !loadError && filteredMechanics.length > 0 && (
+            <>
+              <div className="flex items-center justify-between mb-4 text-sm text-gray-600">
+                <span>
+                  Showing{" "}
+                  <span className="font-semibold">
+                    {filteredMechanics.length}
+                  </span>{" "}
+                  of <span className="font-semibold">{totalCount}</span>{" "}
+                  mechanics
+                </span>
+                <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">
+                  Sorted by experience (high → low)
+                </span>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="fullName"
-                    name="fullName"
-                    value={bookingData.fullName}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                      errors.fullName ? 'border-red-300' : 'border-gray-200'
-                    }`}
-                    placeholder="Enter your full name"
-                    aria-invalid={errors.fullName ? "true" : "false"}
-                    aria-describedby={errors.fullName ? "fullName-error" : null}
-                  />
-                  {errors.fullName && <p id="fullName-error" className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
-                </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                {filteredMechanics.map((mec) => {
+                  const firstImage =
+                    mec.storeImages && mec.storeImages.length > 0
+                      ? mec.storeImages[0].url
+                      : null;
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={bookingData.email}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                      errors.email ? 'border-red-300' : 'border-gray-200'
-                    }`}
-                    placeholder="your.email@example.com"
-                    aria-invalid={errors.email ? "true" : "false"}
-                    aria-describedby={errors.email ? "email-error" : null}
-                  />
-                  {errors.email && <p id="email-error" className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                </div>
+                  const isSelected =
+                    selectedMechanic && selectedMechanic._id === mec._id;
 
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={bookingData.phone}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                      errors.phone ? 'border-red-300' : 'border-gray-200'
-                    }`}
-                    placeholder="(555) 123-4567"
-                    aria-invalid={errors.phone ? "true" : "false"}
-                    aria-describedby={errors.phone ? "phone-error" : null}
-                  />
-                  {errors.phone && <p id="phone-error" className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="address" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Service Address *
-                  </label>
-                  <input
-                    type="text"
-                    id="address"
-                    name="address"
-                    value={bookingData.address}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                      errors.address ? 'border-red-300' : 'border-gray-200'
-                    }`}
-                    placeholder="Street address where service is needed"
-                    aria-invalid={errors.address ? "true" : "false"}
-                    aria-describedby={errors.address ? "address-error" : null}
-                  />
-                  {errors.address && <p id="address-error" className="text-red-500 text-sm mt-1">{errors.address}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-2">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={bookingData.city}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                      errors.city ? 'border-red-300' : 'border-gray-200'
-                    }`}
-                    placeholder="City"
-                    aria-invalid={errors.city ? "true" : "false"}
-                    aria-describedby={errors.city ? "city-error" : null}
-                  />
-                  {errors.city && <p id="city-error" className="text-red-500 text-sm mt-1">{errors.city}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="zipCode" className="block text-sm font-semibold text-gray-700 mb-2">
-                    ZIP Code *
-                  </label>
-                  <input
-                    type="text"
-                    id="zipCode"
-                    name="zipCode"
-                    value={bookingData.zipCode}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                      errors.zipCode ? 'border-red-300' : 'border-gray-200'
-                    }`}
-                    placeholder="12345"
-                    aria-invalid={errors.zipCode ? "true" : "false"}
-                    aria-describedby={errors.zipCode ? "zipCode-error" : null}
-                  />
-                  {errors.zipCode && <p id="zipCode-error" className="text-red-500 text-sm mt-1">{errors.zipCode}</p>}
-                </div>
-              </div>
-
-              <div className="flex justify-end mt-8">
-                <button
-                  onClick={handleNextStep}
-                  className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-3 rounded-xl font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300"
-                >
-                  Next Step
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Vehicle Information */}
-          {currentStep === 2 && (
-            <div className="p-8" role="tabpanel" aria-labelledby="step2-tab">
-              <div className="text-center mb-8">
-                <Car size={48} className="mx-auto mb-4 text-red-600" />
-                <h2 id="step2-tab" className="text-2xl font-bold text-gray-900 mb-2">Vehicle Information</h2>
-                <p className="text-gray-600">Tell us about your vehicle</p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="vehicleMake" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Vehicle Make *
-                  </label>
-                  <input
-                    type="text"
-                    id="vehicleMake"
-                    name="vehicleMake"
-                    value={bookingData.vehicleMake}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                      errors.vehicleMake ? 'border-red-300' : 'border-gray-200'
-                    }`}
-                    placeholder="e.g., Toyota, Honda, Ford"
-                    aria-invalid={errors.vehicleMake ? "true" : "false"}
-                    aria-describedby={errors.vehicleMake ? "vehicleMake-error" : null}
-                  />
-                  {errors.vehicleMake && <p id="vehicleMake-error" className="text-red-500 text-sm mt-1">{errors.vehicleMake}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="vehicleModel" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Vehicle Model *
-                  </label>
-                  <input
-                    type="text"
-                    id="vehicleModel"
-                    name="vehicleModel"
-                    value={bookingData.vehicleModel}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                      errors.vehicleModel ? 'border-red-300' : 'border-gray-200'
-                    }`}
-                    placeholder="e.g., Camry, Civic, F-150"
-                    aria-invalid={errors.vehicleModel ? "true" : "false"}
-                    aria-describedby={errors.vehicleModel ? "vehicleModel-error" : null}
-                  />
-                  {errors.vehicleModel && <p id="vehicleModel-error" className="text-red-500 text-sm mt-1">{errors.vehicleModel}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="vehicleYear" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Year *
-                  </label>
-                  <input
-                    type="number"
-                    id="vehicleYear"
-                    name="vehicleYear"
-                    value={bookingData.vehicleYear}
-                    onChange={handleInputChange}
-                    min="1990"
-                    max="2025"
-                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                      errors.vehicleYear ? 'border-red-300' : 'border-gray-200'
-                    }`}
-                    placeholder="2020"
-                    aria-invalid={errors.vehicleYear ? "true" : "false"}
-                    aria-describedby={errors.vehicleYear ? "vehicleYear-error" : null}
-                  />
-                  {errors.vehicleYear && <p id="vehicleYear-error" className="text-red-500 text-sm mt-1">{errors.vehicleYear}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="vehicleColor" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Color
-                  </label>
-                  <input
-                    type="text"
-                    id="vehicleColor"
-                    name="vehicleColor"
-                    value={bookingData.vehicleColor}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 transition-colors"
-                    placeholder="e.g., White, Black, Red"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="licensePlate" className="block text-sm font-semibold text-gray-700 mb-2">
-                    License Plate
-                  </label>
-                  <input
-                    type="text"
-                    id="licensePlate"
-                    name="licensePlate"
-                    value={bookingData.licensePlate}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 transition-colors"
-                    placeholder="ABC-1234"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="mileage" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Current Mileage
-                  </label>
-                  <input
-                    type="number"
-                    id="mileage"
-                    name="mileage"
-                    value={bookingData.mileage}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 transition-colors"
-                    placeholder="50000"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-between mt-8">
-                <button
-                  onClick={handlePrevStep}
-                  className="border-2 border-red-600 text-red-600 px-8 py-3 rounded-xl font-semibold hover:bg-red-600 hover:text-white transition-all duration-300"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={handleNextStep}
-                  className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-3 rounded-xl font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300"
-                >
-                  Next Step
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Service & Scheduling */}
-          {currentStep === 3 && (
-            <div className="p-8" role="tabpanel" aria-labelledby="step3-tab">
-              <div className="text-center mb-8">
-                <Calendar size={48} className="mx-auto mb-4 text-red-600" />
-                <h2 id="step3-tab" className="text-2xl font-bold text-gray-900 mb-2">Service & Schedule</h2>
-                <p className="text-gray-600">Choose your preferred time</p>
-              </div>
-
-              <div className="space-y-8">
-                {/* Selected Service Display */}
-                {selectedService && (
-                  <div className="bg-red-50 rounded-2xl p-6">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Selected Service</h3>
-                    <div className="flex items-center space-x-4">
-                      <span className="text-3xl">{selectedService.icon}</span>
-                      <div>
-                        <h4 className="font-semibold">{selectedService.title}</h4>
-                        <p className="text-red-600 font-bold">{selectedService.price}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Service Selection (only if no service is pre-selected) */}
-                {!selectedService && (
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-4">
-                      Select Service Type *
-                    </label>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" role="radiogroup" aria-required="true" aria-labelledby="service-type-label">
-                      {allServices.map((service) => (
-                        <div
-                          key={service.id}
-                          onClick={() => {
-                            setBookingData(prev => ({
-                              ...prev,
-                              serviceType: service.title,
-                              serviceCategory: service.category,
-                              estimatedPrice: service.price
-                            }));
-                            setErrors(prev => ({ ...prev, serviceType: '' })); // Clear error on selection
-                          }}
-                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
-                            bookingData.serviceType === service.title
-                              ? 'border-red-500 bg-red-50'
-                              : 'border-gray-200 hover:border-red-300'
-                          }`}
-                          role="radio"
-                          aria-checked={bookingData.serviceType === service.title}
-                          tabIndex={bookingData.serviceType === service.title ? 0 : -1}
-                        >
-                          <div className="text-center">
-                            <div className="text-2xl mb-2">{service.icon}</div>
-                            <h3 className="font-semibold text-sm mb-1">{service.title}</h3>
-                            <p className="text-red-600 font-bold text-sm">{service.price}</p>
+                  return (
+                    <button
+                      key={mec._id}
+                      type="button"
+                      onClick={() => openRequestForm(mec)}
+                      className={`text-left border-2 rounded-2xl p-4 transition-all duration-200 flex flex-col ${
+                        isSelected
+                          ? "border-red-500 bg-red-50 shadow-md"
+                          : "border-gray-100 hover:border-red-300 hover:shadow-md"
+                      }`}
+                    >
+                      <div className="flex items-start gap-4 mb-3">
+                        {firstImage && (
+                          <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                            <img
+                              src={firstImage}
+                              alt={mec.fullStoreName}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                    {errors.serviceType && <p className="text-red-500 text-sm mt-2" id="serviceType-error">{errors.serviceType}</p>}
-                  </div>
-                )}
-
-                {/* Urgency Level */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-4">
-                    Service Urgency
-                  </label>
-                  <div className="grid md:grid-cols-2 gap-4" role="radiogroup" aria-labelledby="urgency-label">
-                    {urgencyOptions.map((option) => (
-                      <div
-                        key={option.value}
-                        onClick={() => setBookingData(prev => ({ ...prev, urgency: option.value }))}
-                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
-                          bookingData.urgency === option.value
-                            ? 'border-red-500 bg-red-50'
-                            : 'border-gray-200 hover:border-red-300'
-                        }`}
-                        role="radio"
-                        aria-checked={bookingData.urgency === option.value}
-                        tabIndex={bookingData.urgency === option.value ? 0 : -1}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <span className="text-2xl">{option.icon}</span>
-                          <div>
-                            <h3 className="font-semibold">{option.label}</h3>
-                            <p className={`text-sm ${option.color}`}>
-                              {option.value === 'emergency' && 'Additional rush fees may apply'}
-                              {option.value === 'urgent' && 'Same day service available'}
-                              {option.value === 'normal' && 'Standard scheduling'}
-                              {option.value === 'flexible' && 'Best rates available'}
+                        )}
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-gray-900">
+                            {mec.fullStoreName || "Unnamed Garage"}
+                          </h3>
+                          <p className="text-sm text-gray-600 flex items-center mt-1">
+                            <MapPin size={14} className="mr-1" />
+                            {mec.city}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Vehicle:{" "}
+                            <span className="font-semibold">
+                              {mec.vehicleSpecialization || "Both"}
+                            </span>
+                          </p>
+                          {mec.experienceYears != null && (
+                            <p className="text-xs text-gray-500">
+                              Experience:{" "}
+                              <span className="font-semibold">
+                                {mec.experienceYears} years
+                              </span>
                             </p>
-                          </div>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Date and Time Selection */}
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="preferredDate" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Preferred Date *
-                    </label>
-                    <input
-                      type="date"
-                      id="preferredDate"
-                      name="preferredDate"
-                      value={bookingData.preferredDate}
-                      onChange={handleInputChange}
-                      min={getCurrentDate()}
-                      className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                        errors.preferredDate ? 'border-red-300' : 'border-gray-200'
-                      }`}
-                      aria-invalid={errors.preferredDate ? "true" : "false"}
-                      aria-describedby={errors.preferredDate ? "preferredDate-error" : null}
-                    />
-                    {errors.preferredDate && <p id="preferredDate-error" className="text-red-500 text-sm mt-1">{errors.preferredDate}</p>}
-                  </div>
+                      {mec.bio && (
+                        <p className="text-xs text-gray-600 mb-3 line-clamp-3">
+                          {mec.bio}
+                        </p>
+                      )}
 
-                  <div>
-                    <label htmlFor="preferredTime" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Preferred Time *
-                    </label>
-                    <select
-                      id="preferredTime"
-                      name="preferredTime"
-                      value={bookingData.preferredTime}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                        errors.preferredTime ? 'border-red-300' : 'border-gray-200'
-                      }`}
-                      aria-invalid={errors.preferredTime ? "true" : "false"}
-                      aria-describedby={errors.preferredTime ? "preferredTime-error" : null}
-                    >
-                      <option value="">Select time</option>
-                      {timeSlots.map((time) => (
-                        <option key={time} value={time}>{time}</option>
-                      ))}
-                    </select>
-                    {errors.preferredTime && <p id="preferredTime-error" className="text-red-500 text-sm mt-1">{errors.preferredTime}</p>}
-                  </div>
+                      {mec.servicesProvided &&
+                        mec.servicesProvided.length > 0 && (
+                          <div className="mb-2">
+                            <p className="text-xs text-gray-500 mb-1">
+                              Services Provided:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {mec.servicesProvided.slice(0, 5).map((srv) => (
+                                <span
+                                  key={srv}
+                                  className="text-[11px] bg-red-50 text-red-700 px-2 py-1 rounded-full"
+                                >
+                                  {srv}
+                                </span>
+                              ))}
+                              {mec.servicesProvided.length > 5 && (
+                                <span className="text-[11px] text-gray-500">
+                                  +{mec.servicesProvided.length - 5} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
-                  <div>
-                    <label htmlFor="alternateDate" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Alternate Date
-                    </label>
-                    <input
-                      type="date"
-                      id="alternateDate"
-                      name="alternateDate"
-                      value={bookingData.alternateDate}
-                      onChange={handleInputChange}
-                      min={getCurrentDate()}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="alternateTime" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Alternate Time
-                    </label>
-                    <select
-                      id="alternateTime"
-                      name="alternateTime"
-                      value={bookingData.alternateTime}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 transition-colors"
-                    >
-                      <option value="">Select time</option>
-                      {timeSlots.map((time) => (
-                        <option key={time} value={time}>{time}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Problem Description */}
-                <div>
-                  <label htmlFor="problemDescription" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Problem Description
-                  </label>
-                  <textarea
-                    id="problemDescription"
-                    name="problemDescription"
-                    value={bookingData.problemDescription}
-                    onChange={handleInputChange}
-                    rows="4"
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 transition-colors"
-                    placeholder="Describe the issue you're experiencing with your vehicle..."
-                  />
-                </div>
-
-                {/* Additional Services */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-4">
-                    Add Optional Services
-                  </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4" role="group" aria-labelledby="additional-services-label">
-                    {additionalServicesOptions.map((service) => (
-                      <div
-                        key={service.id}
-                        className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
-                          bookingData.additionalServices.includes(service.id)
-                            ? 'border-red-500 bg-red-50'
-                            : 'border-gray-200 hover:border-red-300'
-                        }`}
-                        onClick={() => handleAdditionalServiceChange(service.id)}
-                        role="checkbox"
-                        aria-checked={bookingData.additionalServices.includes(service.id)}
-                        tabIndex={0} // Make it focusable
-                      >
-                        <span className="font-semibold text-gray-800">{service.name}</span>
-                        <span className="text-red-600 font-bold">{service.price}</span>
+                      <div className="mt-auto pt-2 border-t border-gray-100 flex items-center justify-between">
+                        <span className="text-[11px] text-gray-500">
+                          Click to select and send request
+                        </span>
+                        {isSelected && (
+                          <CheckCircle size={18} className="text-green-600" />
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="flex justify-between mt-8">
-                <button
-                  onClick={handlePrevStep}
-                  className="border-2 border-red-600 text-red-600 px-8 py-3 rounded-xl font-semibold hover:bg-red-600 hover:text-white transition-all duration-300"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={handleNextStep}
-                  className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-3 rounded-xl font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300"
-                >
-                  Review Booking
-                </button>
+              {/* Pagination */}
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-xs text-gray-500">
+                  Page <span className="font-semibold">{page}</span> of{" "}
+                  <span className="font-semibold">{totalPages}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handlePrevPage}
+                    disabled={!hasPrevPage}
+                    className="flex items-center px-3 py-1.5 rounded-xl border-2 border-gray-200 text-sm text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-all duration-200"
+                  >
+                    <ChevronLeft size={16} className="mr-1" />
+                    Prev
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextPage}
+                    disabled={!hasNextPage}
+                    className="flex items-center px-3 py-1.5 rounded-xl border-2 border-gray-200 text-sm text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-all duration-200"
+                  >
+                    Next
+                    <ChevronRight size={16} className="ml-1" />
+                  </button>
+                </div>
               </div>
-            </div>
+            </>
+          )}
+        </div>
+
+        {/* Step 3: Request form for selected mechanic */}
+        <div className="bg-white rounded-3xl shadow-2xl p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">
+            3. Send service request
+          </h2>
+
+          {!selectedMechanic && (
+            <p className="text-sm text-gray-600">
+              Select a mechanic above to send a request.
+            </p>
           )}
 
-          {/* Step 4: Review & Book */}
-          {currentStep === 4 && (
-            <div className="p-8" role="tabpanel" aria-labelledby="step4-tab">
-              <div className="text-center mb-8">
-                <CheckCircle size={48} className="mx-auto mb-4 text-red-600" />
-                <h2 id="step4-tab" className="text-2xl font-bold text-gray-900 mb-2">Review & Confirm</h2>
-                <p className="text-gray-600">Please review your booking details</p>
-              </div>
-
-              <div className="space-y-6">
-                {/* Service Summary */}
-                <div className="bg-gray-50 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Service Details</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600">Service</p>
-                      <p className="font-semibold">{bookingData.serviceType || selectedService?.title}</p>
+          {selectedMechanic && (
+            <>
+              <div className="mb-4 flex items-start gap-3">
+                {selectedMechanic.storeImages &&
+                  selectedMechanic.storeImages.length > 0 && (
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                      <img
+                        src={selectedMechanic.storeImages[0].url}
+                        alt={selectedMechanic.fullStoreName}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Estimated Price</p>
-                      <p className="font-semibold text-red-600">{bookingData.estimatedPrice || selectedService?.price}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Date & Time</p>
-                      <p className="font-semibold">{bookingData.preferredDate} at {bookingData.preferredTime}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Urgency</p>
-                      <p className="font-semibold capitalize">{bookingData.urgency}</p>
-                    </div>
-                    {bookingData.problemDescription && (
-                      <div className="md:col-span-2">
-                        <p className="text-sm text-gray-600">Problem Description</p>
-                        <p className="font-semibold">{bookingData.problemDescription}</p>
-                      </div>
-                    )}
-                    {bookingData.additionalServices.length > 0 && (
-                      <div className="md:col-span-2">
-                        <p className="text-sm text-gray-600 mb-1">Additional Services</p>
-                        <ul className="list-disc list-inside ml-2 text-gray-700">
-                          {bookingData.additionalServices.map(id => {
-                            const service = additionalServicesOptions.find(s => s.id === id);
-                            return service ? <li key={id}>{service.name} (<span className="font-bold">{service.price}</span>)</li> : null;
-                          })}
-                        </ul>
-                      </div>
-                    )}
-                    {bookingData.specialInstructions && (
-                      <div className="md:col-span-2">
-                        <p className="text-sm text-gray-600">Special Instructions</p>
-                        <p className="font-semibold">{bookingData.specialInstructions}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Contact Summary */}
-                <div className="bg-gray-50 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Contact Information</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600">Name</p>
-                      <p className="font-semibold">{bookingData.fullName}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Phone</p>
-                      <p className="font-semibold">{bookingData.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Email</p>
-                      <p className="font-semibold">{bookingData.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Service Address</p>
-                      <p className="font-semibold">{bookingData.address}, {bookingData.city} {bookingData.zipCode}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Vehicle Summary */}
-                <div className="bg-gray-50 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Vehicle Information</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600">Make</p>
-                      <p className="font-semibold">{bookingData.vehicleMake}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Model</p>
-                      <p className="font-semibold">{bookingData.vehicleModel}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Year</p>
-                      <p className="font-semibold">{bookingData.vehicleYear}</p>
-                    </div>
-                    {bookingData.vehicleColor && (
-                      <div>
-                        <p className="text-sm text-gray-600">Color</p>
-                        <p className="font-semibold">{bookingData.vehicleColor}</p>
-                      </div>
-                    )}
-                    {bookingData.licensePlate && (
-                      <div>
-                        <p className="text-sm text-gray-600">License Plate</p>
-                        <p className="font-semibold">{bookingData.licensePlate}</p>
-                      </div>
-                    )}
-                    {bookingData.mileage && (
-                      <div>
-                        <p className="text-sm text-gray-600">Mileage</p>
-                        <p className="font-semibold">{bookingData.mileage}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Final Contact Preferences & Consent */}
-                <div className="bg-gray-50 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Final Preferences</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        How would you prefer us to contact you for confirmation?
-                      </label>
-                      <div className="flex items-center space-x-4" role="radiogroup" aria-labelledby="contact-preference-label">
-                        <label htmlFor="contactPhone" className="inline-flex items-center cursor-pointer">
-                          <input
-                            type="radio"
-                            id="contactPhone"
-                            name="contactPreference"
-                            value="phone"
-                            checked={bookingData.contactPreference === 'phone'}
-                            onChange={handleInputChange}
-                            className="form-radio text-red-600 h-5 w-5"
-                          />
-                          <span className="ml-2 text-gray-700 flex items-center"><Phone size={16} className="mr-1" /> Phone Call</span>
-                        </label>
-                        <label htmlFor="contactEmail" className="inline-flex items-center cursor-pointer">
-                          <input
-                            type="radio"
-                            id="contactEmail"
-                            name="contactPreference"
-                            value="email"
-                            checked={bookingData.contactPreference === 'email'}
-                            onChange={handleInputChange}
-                            className="form-radio text-red-600 h-5 w-5"
-                          />
-                          <span className="ml-2 text-gray-700 flex items-center"><Mail size={16} className="mr-1" /> Email</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="marketingConsent" className="inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          id="marketingConsent"
-                          name="marketingConsent"
-                          checked={bookingData.marketingConsent}
-                          onChange={handleInputChange}
-                          className="form-checkbox text-red-600 h-5 w-5 rounded"
-                        />
-                        <span className="ml-2 text-gray-700">I agree to receive marketing communications and offers.</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Important Information / Disclaimer */}
-                <div className="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-800 rounded">
-                  <div className="flex items-center mb-2">
-                    <AlertCircle size={20} className="mr-2" />
-                    <p className="font-semibold">Important Information</p>
-                  </div>
-                  <p className="text-sm">
-                    By clicking "Confirm & Book", you agree to our <a href="#" className="underline text-yellow-900 hover:text-yellow-700" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="#" className="underline text-yellow-900 hover:text-yellow-700" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
-                    Estimated prices are subject to change after a full diagnosis by our mechanic.
+                  )}
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {selectedMechanic.fullStoreName}
+                  </p>
+                  <p className="text-xs text-gray-600 flex items-center">
+                    <MapPin size={12} className="mr-1" />
+                    {selectedMechanic.city}
                   </p>
                 </div>
               </div>
 
-              {/* Navigation Buttons for Step 4 */}
-              <div className="flex justify-between mt-8">
-                <button
-                  onClick={handlePrevStep}
-                  className="border-2 border-red-600 text-red-600 px-8 py-3 rounded-xl font-semibold hover:bg-red-600 hover:text-white transition-all duration-300"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-3 rounded-xl font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? (
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : (
-                    <CheckCircle size={20} className="mr-2" />
+              {requestError && (
+                <div className="mb-3 flex items-center bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-sm">
+                  <AlertCircle size={16} className="mr-2" />
+                  <span>{requestError}</span>
+                </div>
+              )}
+
+              {requestSuccess && (
+                <div className="mb-3 flex items-center bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-xl text-sm">
+                  <CheckCircle size={16} className="mr-2" />
+                  <span>{requestSuccess}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmitRequest} className="space-y-4">
+                {/* Vehicle type for request */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Vehicle Type *
+                  </label>
+                  <select
+                    value={vehicleTypeForRequest}
+                    onChange={(e) => setVehicleTypeForRequest(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm"
+                    required
+                  >
+                    <option value="">Select vehicle type</option>
+                    {VEHICLE_TYPES.map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Service type for request, filtered by mechanic capability */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Service Type *
+                  </label>
+                  <select
+                    value={serviceTypeForRequest}
+                    onChange={(e) => setServiceTypeForRequest(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm"
+                    required
+                  >
+                    <option value="">Select service</option>
+                    {availableServicesForRequest.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedMechanic?.servicesProvided?.length > 0 && (
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      Only services provided by this mechanic are shown.
+                    </p>
                   )}
-                  {isSubmitting ? 'Submitting...' : 'Confirm & Book'}
-                </button>
-              </div>
-            </div>
+                </div>
+
+                {/* Message with counter */}
+                {/* Message with counter */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Describe the Issue
+                  </label>
+                  <div className="relative">
+                    <textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={4}
+                      maxLength={maxLength}
+                      className="w-full px-3 py-2 pr-12 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm"
+                      placeholder="Explain the issue in a bit more detail..."
+                    />
+                    <div className="pointer-events-none absolute bottom-2 right-3 text-xs font-medium bg-white/80 px-1 rounded">
+                      <span
+                        className={
+                          message.length >= maxLength
+                            ? "text-red-500"
+                            : "text-gray-400"
+                        }
+                      >
+                        {message.length}
+                      </span>
+                      /{maxLength}
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    This will be sent to the mechanic as-is and cannot be edited
+                    later.
+                  </p>
+                </div>
+
+                {/* One-time submission warning */}
+                <div className="mt-2 mb-1 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 flex items-start gap-2">
+                  <AlertCircle size={14} className="mt-0.5 text-amber-600" />
+                  <p className="text-[11px] text-amber-800">
+                    Please review your message carefully. Once you submit this
+                    request, the text can’t be changed. If you need to correct
+                    something later, you’ll have to create a new request.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSubmittingRequest}
+                    className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300 flex items-center disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isSubmittingRequest ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin mr-2" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} className="mr-2" />
+                        Send Request
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </>
           )}
         </div>
       </div>
     </div>
-    </>
   );
 };
 
-export default Services;
+export default FindMechanicAndRequest;

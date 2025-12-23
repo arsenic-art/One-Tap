@@ -159,7 +159,7 @@ const AddMechanicPage = () => {
 
   return (
     <>
-      <Navbar />
+      
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         {/* Hero Section */}
         <div className="bg-gradient-to-br from-red-600 via-red-500 to-orange-500 text-white relative overflow-hidden">

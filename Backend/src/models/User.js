@@ -37,6 +37,10 @@ const UserSchema = new mongoose.Schema(
           `${props.value} is not a valid phone number (must be 10-15 digits, optional +)`,
       },
     },
+    role: {
+      type: String,
+      default: "user",
+    },
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -57,7 +61,16 @@ const UserSchema = new mongoose.Schema(
     emailVerificationExpiry: {
       type: Date,
     },
-
+    profileImage: {
+      type: String,
+      default: null,
+    },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpiry: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

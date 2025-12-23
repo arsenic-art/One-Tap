@@ -9,9 +9,10 @@ const userRoutes = require("./routes/auth.routes");
 const mechanicRoutes = require("./routes/mechanicAuth.routes");
 const mechanicApplicationRoutes = require("./routes/mechanicApplication.routes");
 const serviceRequestRoutes = require("./routes/serviceRequest.routes");
+const bookingRoutes = require("./routes/bookingRoutes");
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
     credentials: true,
   })
 );
@@ -25,7 +26,7 @@ app.use("/api/mechanic", mechanicRoutes);
 app.use("/api/mechanic-application", mechanicApplicationRoutes);
 app.use("/api/mechanicsList", servicesRoutes);
 app.use("/api/service-requests", serviceRequestRoutes);
-
+app.use("/api", bookingRoutes);
 
 connectDB().then(() => {
   app.listen(process.env.PORT || 3000, () => {

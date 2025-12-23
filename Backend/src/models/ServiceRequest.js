@@ -20,6 +20,22 @@ const serviceRequestSchema = new mongoose.Schema(
       required: true,
     },
 
+    serviceType: {
+      type: String,
+      enum: [
+        "Emergency Roadside Assistance",
+        "Mobile Oil Change",
+        "Brake Inspection & Repair",
+        "Battery Replacement",
+        "Tire Services",
+        "Engine Diagnostics",
+        "AC System Service",
+        "Pre-Purchase Inspection",
+        "Preventive Maintenance",
+      ],
+      required: true,
+    },
+
     message: {
       type: String,
       trim: true,

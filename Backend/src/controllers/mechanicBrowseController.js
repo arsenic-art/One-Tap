@@ -8,16 +8,21 @@ exports.browseMechanics = async (req, res) => {
 
     const { city, vehicle, service } = req.query;
 
-    const filter = {
-      status: "approved",
-    };
+    const filter = { status: "approved" };
 
     if (city) {
-      filter.city = city;
+      filter.city = {
+        $regex: city.trim(),
+        $options: "i",
+      };
     }
 
     if (vehicle) {
-      filter.vehicleSpecialization = vehicle; 
+      if (vehicle === "Both") {
+        filter.vehicleSpecialization = { $in: ["Bike", "Car", "Both"] };
+      } else {
+        filter.vehicleSpecialization = { $in: [vehicle, "Both"] };
+      }
     }
 
     if (service) {
@@ -25,11 +30,11 @@ exports.browseMechanics = async (req, res) => {
     }
 
     const mechanics = await MechanicApplication.find(filter)
-      .sort({ experienceYears: -1 }) 
+      .sort({ experienceYears: -1 })
       .skip(skip)
       .limit(limit)
       .select(
-        "fullStoreName city experienceYears vehicleSpecialization servicesProvided bio storeImages"
+        "mechanicID fullStoreName city experienceYears vehicleSpecialization servicesProvided bio storeImages"
       );
 
     const total = await MechanicApplication.countDocuments(filter);
@@ -47,8 +52,6 @@ exports.browseMechanics = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      message: "Failed to fetch mechanics",
-    });
+    res.status(500).json({ message: "Failed to fetch mechanics" });
   }
 };

@@ -70,14 +70,16 @@ const registerUser = async (req, res) => {
         <p>This link expires in 24 hours.</p>
       `,
     });
-
+    const t = generateToken(newUser._id);
     res
       .status(201)
-      .cookie("token", generateToken(newUser._id), {
+      .cookie("token", t, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       })
+
       .json({
         message: "Registration successful. Please verify your email.",
       });
@@ -143,7 +145,7 @@ const loginUser = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     res.json({
@@ -152,6 +154,8 @@ const loginUser = async (req, res) => {
       lastName: user.lastName,
       email: user.email,
       phoneNumber: user.phoneNumber,
+      role: user.role,
+      profileImage: user.profileImage || "",
     });
   } catch (error) {
     console.error(error);
@@ -160,40 +164,53 @@ const loginUser = async (req, res) => {
 };
 
 const getUserProfile = async (req, res) => {
-  if (req.user) {
-    res.json({
-      firstName: req.user.firstName,
-      lastName: req.user.lastName,
-      email: req.user.email,
-      phoneNumber: req.user.phoneNumber,
-    });
-  } else {
-    res.status(404).json({ message: "User not found" });
+  if (!req.user) {
+    return res.status(404).json({ message: "User not found" });
   }
+
+  res.json({
+    _id: req.user._id,
+    firstName: req.user.firstName,
+    lastName: req.user.lastName,
+    email: req.user.email,
+    phoneNumber: req.user.phoneNumber,
+    role: req.user.role,
+    profileImage: req.user.profileImage || "",
+  });
 };
+
 const updateUserProfile = async (req, res) => {
-  const { firstName, lastName, phoneNumber, password } = req.body;
   try {
-    const user = await User.findById(req.user._id);
-    if (user) {
-      user.firstName = firstName || user.firstName;
-      user.lastName = lastName || user.lastName;
-      user.phoneNumber = phoneNumber || user.phoneNumber;
-      if (password) {
-        user.password = password;
-      }
-      const updatedUser = await user.save();
-      res.json({
-        _id: updatedUser._id,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
-        phoneNumber: updatedUser.phoneNumber,
-        token: generateToken(updatedUser._id),
-      });
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+
+    if (req.file) {
+      user.profileImage = req.file.path;
+    }
+    if (req.body.firstName !== undefined) user.firstName = req.body.firstName;
+    if (req.body.lastName !== undefined) user.lastName = req.body.lastName;
+    if (req.body.phoneNumber !== undefined)
+      user.phoneNumber = req.body.phoneNumber;
+    if (req.body.password !== undefined) user.password = req.body.password;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile updated",
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      profileImage: user.profileImage,
+    });
+  } catch (err) {
+    console.error("updateUserProfile error:", err);
+    res.status(500).json({ message: "Update failed" });
   }
 };
 

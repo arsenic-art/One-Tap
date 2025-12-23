@@ -109,6 +109,7 @@ const loginMechanic = async (req, res) => {
         firstName: mechanic.firstName,
         email: mechanic.email,
         token,
+        role: mechanic.role,
       });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -37,6 +37,10 @@ const MechanicSchema = new mongoose.Schema(
           `${props.value} is not a valid phone number (must be 10-15 digits, optional +)`,
       },
     },
+    role: {
+      type: String,
+      default: "mechanic", 
+    },
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -58,7 +62,7 @@ const MechanicSchema = new mongoose.Schema(
     emailVerificationExpiry: {
       type: Date,
     },
-    
+
     profileImage: {
       type: String,
       default: null,

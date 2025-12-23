@@ -3,9 +3,9 @@ const Mechanic = require("../models/Mechanic");
 
 exports.createRequest = async (req, res) => {
   try {
-    const { mechanicId, problemType, message } = req.body;
+    const { mechanicId, problemType, serviceType, message } = req.body;
 
-    if (!mechanicId || !problemType) {
+    if (!mechanicId || !problemType || !serviceType) {
       return res.status(400).json({ message: "Required fields missing" });
     }
 
@@ -17,7 +17,8 @@ exports.createRequest = async (req, res) => {
     const request = await ServiceRequest.create({
       userId: req.user._id,
       mechanicId,
-      problemType,
+      problemType,   
+      serviceType,    
       message,
     });
 
@@ -27,15 +28,14 @@ exports.createRequest = async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res
-        .status(409)
-        .json({ message: "Request already pending" });
+      return res.status(409).json({ message: "Request already pending" });
     }
 
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 exports.getUserRequests = async (req, res) => {
   try {

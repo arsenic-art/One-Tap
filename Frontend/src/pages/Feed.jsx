@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
-import Navbar from "./Navbar";
-import { 
-  Heart, 
-  MessageCircle, 
-  Share2, 
-  Bookmark, 
+import { useState, useEffect } from "react";
+import Navbar from "../components/common/Navbar";
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  Bookmark,
   MoreHorizontal,
   Wrench,
   MapPin,
@@ -14,9 +14,6 @@ import {
   Users,
   Award,
   CheckCircle,
-  Camera,
-  Play,
-  ThumbsUp
 } from "lucide-react";
 
 const FeedPage = () => {
@@ -36,22 +33,23 @@ const FeedPage = () => {
           avatar: "RK",
           verified: true,
           rating: 4.8,
-          location: "Mumbai"
+          location: "Mumbai",
         },
         timestamp: "2 hours ago",
-        content: "Just completed a complex engine rebuild on a 2018 BMW X5! The customer was thrilled with the results. Nothing beats the satisfaction of bringing a car back to life.",
+        content:
+          "Just completed a complex engine rebuild on a 2018 BMW X5! The customer was thrilled with the results. Nothing beats the satisfaction of bringing a car back to life.",
         images: ["/api/placeholder/400/300", "/api/placeholder/400/300"],
         stats: {
           likes: 127,
           comments: 23,
-          shares: 8
+          shares: 8,
         },
         serviceDetails: {
           vehicle: "2018 BMW X5",
           service: "Engine Rebuild",
           duration: "4 hours",
-          price: "₹45,000"
-        }
+          price: "₹45,000",
+        },
       },
       {
         id: 2,
@@ -62,22 +60,23 @@ const FeedPage = () => {
           avatar: "PS",
           verified: false,
           rating: null,
-          location: "Delhi"
+          location: "Delhi",
         },
         timestamp: "5 hours ago",
-        content: "Pro tip for car owners: Check your tire pressure every month! Proper tire pressure can improve fuel efficiency by up to 10% and extend tire life significantly. Here's how to do it properly...",
+        content:
+          "Pro tip for car owners: Check your tire pressure every month! Proper tire pressure can improve fuel efficiency by up to 10% and extend tire life significantly. Here's how to do it properly...",
         images: ["/api/placeholder/400/250"],
         stats: {
           likes: 89,
           comments: 15,
-          shares: 34
+          shares: 34,
         },
         tips: [
           "Check pressure when tires are cold",
           "Use a reliable pressure gauge",
           "Don't forget the spare tire",
-          "Follow manufacturer recommendations"
-        ]
+          "Follow manufacturer recommendations",
+        ],
       },
       {
         id: 3,
@@ -88,21 +87,22 @@ const FeedPage = () => {
           avatar: "OT",
           verified: true,
           rating: null,
-          location: "India"
+          location: "India",
         },
         timestamp: "1 day ago",
-        content: "Celebrating a major milestone! OneTap has now completed over 50,000 successful services across India. Thank you to our amazing community of mechanics and customers!",
+        content:
+          "Celebrating a major milestone! OneTap has now completed over 50,000 successful services across India. Thank you to our amazing community of mechanics and customers!",
         images: ["/api/placeholder/600/300"],
         stats: {
           likes: 1247,
           comments: 156,
-          shares: 89
+          shares: 89,
         },
         milestone: {
           number: "50,000+",
           description: "Services Completed",
-          growth: "+15% this month"
-        }
+          growth: "+15% this month",
+        },
       },
       {
         id: 4,
@@ -113,21 +113,22 @@ const FeedPage = () => {
           avatar: "AS",
           verified: true,
           rating: 4.9,
-          location: "Bangalore"
+          location: "Bangalore",
         },
         timestamp: "1 day ago",
-        content: "Amazing transformation! This Honda Civic came in with severe rust damage. After 6 hours of detailed work, it's looking brand new. The owner was speechless!",
+        content:
+          "Amazing transformation! This Honda Civic came in with severe rust damage. After 6 hours of detailed work, it's looking brand new. The owner was speechless!",
         images: ["/api/placeholder/300/200", "/api/placeholder/300/200"],
         stats: {
           likes: 203,
           comments: 45,
-          shares: 22
+          shares: 22,
         },
         transformation: {
           before: "Rust damage, dents, faded paint",
           after: "Restored finish, rust removed, polished",
-          timeSpent: "6 hours"
-        }
+          timeSpent: "6 hours",
+        },
       },
       {
         id: 5,
@@ -138,47 +139,57 @@ const FeedPage = () => {
           avatar: "SP",
           verified: false,
           rating: null,
-          location: "Ahmedabad"
+          location: "Ahmedabad",
         },
         timestamp: "2 days ago",
-        content: "Absolutely fantastic service from Vikash! My car broke down on the highway and he reached me within 30 minutes. Professional, friendly, and reasonably priced. OneTap is a lifesaver!",
+        content:
+          "Absolutely fantastic service from Vikash! My car broke down on the highway and he reached me within 30 minutes. Professional, friendly, and reasonably priced. OneTap is a lifesaver!",
         stats: {
           likes: 156,
           comments: 31,
-          shares: 12
+          shares: 12,
         },
         review: {
           mechanicName: "Vikash Kumar",
           rating: 5,
           service: "Emergency Roadside Assistance",
-          responseTime: "30 minutes"
-        }
-      }
+          responseTime: "30 minutes",
+        },
+      },
     ];
     setPosts(mockPosts);
   }, []);
 
   const handleLike = (postId) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, stats: { ...post.stats, likes: post.stats.likes + 1 } }
-        : post
-    ));
+    setPosts(
+      posts.map((post) =>
+        post.id === postId
+          ? { ...post, stats: { ...post.stats, likes: post.stats.likes + 1 } }
+          : post
+      )
+    );
   };
 
   const renderPost = (post) => {
     return (
-      <div key={post.id} className="bg-white rounded-3xl shadow-xl p-6 mb-6 hover:shadow-2xl transition-all duration-300">
+      <div
+        key={post.id}
+        className="bg-white rounded-3xl shadow-xl p-6 mb-6 hover:shadow-2xl transition-all duration-300"
+      >
         {/* Post Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">{post.author.avatar}</span>
+              <span className="text-white font-bold text-sm">
+                {post.author.avatar}
+              </span>
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="font-bold text-gray-900">{post.author.name}</h3>
-                {post.author.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                {post.author.verified && (
+                  <CheckCircle className="w-4 h-4 text-blue-500" />
+                )}
               </div>
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <span>{post.author.role}</span>
@@ -219,19 +230,27 @@ const FeedPage = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <span className="text-gray-600">Vehicle:</span>
-                <p className="font-semibold text-gray-900">{post.serviceDetails.vehicle}</p>
+                <p className="font-semibold text-gray-900">
+                  {post.serviceDetails.vehicle}
+                </p>
               </div>
               <div>
                 <span className="text-gray-600">Service:</span>
-                <p className="font-semibold text-gray-900">{post.serviceDetails.service}</p>
+                <p className="font-semibold text-gray-900">
+                  {post.serviceDetails.service}
+                </p>
               </div>
               <div>
                 <span className="text-gray-600">Duration:</span>
-                <p className="font-semibold text-gray-900">{post.serviceDetails.duration}</p>
+                <p className="font-semibold text-gray-900">
+                  {post.serviceDetails.duration}
+                </p>
               </div>
               <div>
                 <span className="text-gray-600">Value:</span>
-                <p className="font-semibold text-green-600">{post.serviceDetails.price}</p>
+                <p className="font-semibold text-green-600">
+                  {post.serviceDetails.price}
+                </p>
               </div>
             </div>
           </div>
@@ -242,7 +261,10 @@ const FeedPage = () => {
             <h4 className="font-semibold text-blue-900 mb-2">Quick Tips:</h4>
             <ul className="space-y-1">
               {post.tips.map((tip, index) => (
-                <li key={index} className="text-sm text-blue-800 flex items-center space-x-2">
+                <li
+                  key={index}
+                  className="text-sm text-blue-800 flex items-center space-x-2"
+                >
                   <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
                   <span>{tip}</span>
                 </li>
@@ -254,9 +276,15 @@ const FeedPage = () => {
         {post.type === "achievement" && post.milestone && (
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4 mb-4">
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">{post.milestone.number}</div>
-              <div className="text-green-800 font-semibold">{post.milestone.description}</div>
-              <div className="text-sm text-green-600 mt-1">{post.milestone.growth}</div>
+              <div className="text-3xl font-bold text-green-600">
+                {post.milestone.number}
+              </div>
+              <div className="text-green-800 font-semibold">
+                {post.milestone.description}
+              </div>
+              <div className="text-sm text-green-600 mt-1">
+                {post.milestone.growth}
+              </div>
             </div>
           </div>
         )}
@@ -265,16 +293,23 @@ const FeedPage = () => {
           <div className="bg-yellow-50 rounded-2xl p-4 mb-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold text-gray-900">Service by: {post.review.mechanicName}</p>
+                <p className="font-semibold text-gray-900">
+                  Service by: {post.review.mechanicName}
+                </p>
                 <p className="text-sm text-gray-600">{post.review.service}</p>
               </div>
               <div className="text-right">
                 <div className="flex items-center space-x-1">
                   {[...Array(post.review.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <Star
+                      key={i}
+                      className="w-4 h-4 fill-yellow-400 text-yellow-400"
+                    />
                   ))}
                 </div>
-                <p className="text-sm text-gray-600">Response: {post.review.responseTime}</p>
+                <p className="text-sm text-gray-600">
+                  Response: {post.review.responseTime}
+                </p>
               </div>
             </div>
           </div>
@@ -282,11 +317,15 @@ const FeedPage = () => {
 
         {/* Images */}
         {post.images && post.images.length > 0 && (
-          <div className={`grid gap-2 mb-4 ${post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          <div
+            className={`grid gap-2 mb-4 ${
+              post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"
+            }`}
+          >
             {post.images.map((image, index) => (
               <div key={index} className="relative group">
-                <img 
-                  src={image} 
+                <img
+                  src={image}
                   alt={`Post ${post.id} image ${index + 1}`}
                   className="w-full h-64 object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
                 />
@@ -303,7 +342,7 @@ const FeedPage = () => {
         {/* Engagement Actions */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center space-x-6">
-            <button 
+            <button
               onClick={() => handleLike(post.id)}
               className="flex items-center space-x-2 text-gray-600 hover:text-red-600 transition-colors duration-200"
             >
@@ -342,7 +381,9 @@ const FeedPage = () => {
                   </div>
                   <span>OneTap Feed</span>
                 </h1>
-                <p className="text-gray-600">Stay connected with the automotive community</p>
+                <p className="text-gray-600">
+                  Stay connected with the automotive community
+                </p>
               </div>
             </div>
 
@@ -352,16 +393,17 @@ const FeedPage = () => {
                 { key: "all", label: "All Posts", icon: TrendingUp },
                 { key: "services", label: "Services", icon: Wrench },
                 { key: "tips", label: "Tips & Tricks", icon: Award },
-                { key: "community", label: "Community", icon: Users }
+                { key: "community", label: "Community", icon: Users },
               ].map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   onClick={() => setActiveTab(key)}
                   className={`
                     flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl font-semibold transition-all duration-300
-                    ${activeTab === key
-                      ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-md"
-                      : "text-gray-700 hover:bg-gray-50"
+                    ${
+                      activeTab === key
+                        ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-md"
+                        : "text-gray-700 hover:bg-gray-50"
                     }
                   `}
                 >
@@ -397,7 +439,7 @@ const FeedPage = () => {
 
           {/* Posts */}
           <div className="space-y-6">
-            {posts.map(post => renderPost(post))}
+            {posts.map((post) => renderPost(post))}
           </div>
 
           {/* Load More */}

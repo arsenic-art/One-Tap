@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
-import { useAuthStore } from "./store/useAuthStore";
-import "./index.css";
+import { useAuthStore } from "../store/useAuthStore";
+import "../styles/index.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 

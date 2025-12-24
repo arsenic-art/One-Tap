@@ -1,21 +1,20 @@
-import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import RootLayout from "./RootLayout";
-import Homepage from "./pages/Homepage";
-import Services from "./components/Services";
-import Support from "./components/Support";
-import LogSign from "./components/LogSign";
-import AboutUsPage from "./components/AboutUs";
-import ForgotPasswordPage from "./components/ForgotPassword";
-import AddMechanicPage from "./components/AddMechanic";
-import AdminDashboard from "./components/AdminDashboard";
-import FeedPage from "./components/Feed";
-import BrowseMechanics from "./components/BrowseMechanics";
-import ServiceRequestPage from "./components/ServiceRequestPage";
-import ProtectedRoute from "./components/ProtectedRoute";
-import MyBooking from "./components/MyBookings";
-import ProfilePage from "./components/ProfilePage";
-import ProfileEditPage from "./components/ProfileEditPage";
+import Homepage from "../pages/Homepage";
+import Services from "../features/services/Services";
+import Support from "../pages/Support";
+import LogSign from "../features/auth/LoginSignup";
+import AboutUsPage from "../pages/AboutUs";
+import ForgotPasswordPage from "../features/auth/ForgotPassword";
+import AddMechanicPage from "../features/mechanic/AddMechanic";
+import AdminDashboard from "../features/admin/AdminDashboard";
+import FeedPage from "../pages/Feed";
+import BrowseMechanics from "../features/mechanic/BrowseMechanics";
+import ServiceRequestPage from "../features/services/ServiceRequestPage";
+import ProtectedRoute from "../components/common/ProtectedRoute";
+import MyBooking from "../features/bookings/MyBookings";
+import ProfilePage from "../features/profile/ProfilePage";
+import ProfileEditPage from "../features/profile/ProfileEditPage";
 
 const appRouter = createBrowserRouter([
   {
@@ -108,7 +107,6 @@ const appRouter = createBrowserRouter([
     ],
   },
 ]);
-
 
 const App = () => {
   return <RouterProvider router={appRouter} />;

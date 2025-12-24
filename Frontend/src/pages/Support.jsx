@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import Navbar from "./Navbar";
+import { useState, useEffect } from "react";
 import {
   BadgeQuestionMark,
   CircleAlert,
@@ -16,7 +15,6 @@ import { BookOpenText } from "lucide-react";
 import { TicketPercent } from "lucide-react";
 import { Wrench } from "lucide-react";
 import { CreditCard } from "lucide-react";
-import { Outlet } from "react-router-dom";
 
 const SupportPage = () => {
   const [activeTab, setActiveTab] = useState("faq");
@@ -325,7 +323,9 @@ const SupportPage = () => {
                   {tab === "troubleshooting" && (
                     <div className="flex gap-3 items-center">
                       <Wrench
-                        color={activeTab === "troubleshooting" ? "white" : "red"}
+                        color={
+                          activeTab === "troubleshooting" ? "white" : "red"
+                        }
                       />
                       TROUBLESHOOTING
                     </div>
@@ -335,7 +335,7 @@ const SupportPage = () => {
             </div>
 
             {/* FAQ Tab */}
-            
+
             {activeTab === "faq" && (
               <div className="space-y-8">
                 {faqData.map((category, categoryIndex) => (

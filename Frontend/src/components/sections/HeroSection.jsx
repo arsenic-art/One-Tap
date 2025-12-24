@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react";
-import Logo from "../assets/OneTapLogo - Copy.png";
+import { useState, useEffect } from "react";
+import Logo from "../../assets/OneTapLogo - Copy.png";
 import {
   Car,
   FileQuestionMark,
-  FileQuestionMarkIcon,
-  IndianRupee,
   Phone,
   Siren,
   Wrench,
+  Shield,
+  Users,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -27,20 +27,19 @@ const HeroSection = () => {
     {
       icon: "📍",
       title: "Live Location Detection",
-      description:
-        "We pinpoint your location in seconds to dispatch nearby help.",
+      description: "We pinpoint your location to find nearby mechanics.",
       color: "from-blue-400 to-blue-500",
     },
     {
       icon: "🔧",
       title: "Verified Mechanics",
-      description: "Only trusted and skilled mechanics reach you.",
+      description: "Browse certified mechanics in your area.",
       color: "from-green-400 to-green-500",
     },
     {
       icon: "⚡",
-      title: "Fast Response",
-      description: "On-road help usually arrives within 30 minutes.",
+      title: "Fast Booking",
+      description: "Book services instantly with verified pros.",
       color: "from-purple-400 to-purple-500",
     },
   ];
@@ -49,85 +48,69 @@ const HeroSection = () => {
 
   const stats = [
     { number: "< 30", label: "Minutes Response", unit: "min" },
-    { number: "50K+", label: "Happy Customers", unit: "" },
+    { number: "Many", label: "Happy Customers", unit: "" },
     { number: "24/7", label: "Available", unit: "" },
-    { number: "98%", label: "Success Rate", unit: "%" },
+    { number: "92%", label: "Success Rate", unit: "%" },
   ];
 
   const quickSections = [
     {
       title: "About OneTap",
       icon: <Car size={36} />,
-      description: "Professional mobile mechanics at your doorstep",
+      description: "Learn about our roadside assistance service",
       link: "/aboutus",
     },
     {
-      title: "Services",
+      title: "Book Service",
       icon: <Wrench size={36} />,
-      description: "Battery, tire, engine repair & more",
+      description: "Request mechanic help now",
       link: "/services",
     },
     {
-      title: "Pricing",
-      icon: <IndianRupee size={36} />,
-      description: "Transparent, upfront pricing",
-      link: "/pricing",
+      title: "Browse Mechanics",
+      icon: <Users size={36} />,
+      description: "Find verified mechanics near you",
+      link: "/browse",
     },
     {
-      title: "FAQ",
-      icon: <FileQuestionMarkIcon size={36} />,
-      description: "Quick answers to common questions",
-      link: "/services",
+      title: "My Bookings",
+      icon: <Shield size={36} />,
+      description: "Track your service requests",
+      link: "/bookings",
     },
   ];
 
   const faqs = [
     {
-      question: "How quickly can you reach me?",
-      answer: "Usually within 30 minutes, depending on your location.",
+      question: "How do I book a mechanic?",
+      answer: "Go to Services → Browse Mechanics → Book instantly.",
     },
     {
-      question: "What if I'm on a highway?",
-      answer:
-        "We specialize in roadside assistance and can reach you anywhere safely.",
+      question: "Can I see mechanic ratings?",
+      answer: "Yes, browse verified mechanics with ratings and reviews.",
     },
     {
-      question: "Are your mechanics certified?",
+      question: "What services are available?",
       answer:
-        "Yes, all our mechanics are certified, licensed, and background-checked.",
+        "Battery replacement, tire repair, AC service, engine diagnostics & more.",
     },
     {
-      question: "What payment methods do you accept?",
-      answer:
-        "We accept all major credit cards, debit cards, and digital payments.",
+      question: "How do I track my booking?",
+      answer: "Check My Bookings page for real-time status updates.",
     },
   ];
 
   return (
     <div className="bg-gray-50">
-      {/* Hero Section - Much Lighter */}
+      {/* Hero Section */}
       <section className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 text-gray-800 overflow-hidden">
-        {/* Subtle Background Effects */}
         <div className="absolute inset-0">
           <div className="absolute top-20 left-20 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-20 right-20 w-80 h-80 bg-orange-100/30 rounded-full blur-2xl animate-pulse delay-1000"></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-50/20 rounded-full blur-3xl animate-pulse delay-500"></div>
         </div>
 
-        {/* Floating Elements */}
-        {/* <div className="absolute top-32 left-10 animate-bounce delay-300">
-          <div className="w-12 h-12 bg-blue-100/50 rounded-full flex items-center justify-center">
-            <span className="text-2xl">🚗</span>
-          </div>
-        </div>
-        <div className="absolute top-32 right-10 animate-bounce delay-300">
-          <div className="w-10 h-10 bg-orange-100/50 rounded-full flex items-center justify-center">
-            <span className="text-xl">🔧</span>
-          </div>
-        </div> */}
-
         <div className="relative z-10 max-w-7xl mx-auto px-4 py-20">
-          {/* Main Hero Content */}
           <div
             className={`text-center transition-all duration-1000 ${
               isVisible
@@ -141,7 +124,7 @@ const HeroSection = () => {
                   <img
                     src={Logo}
                     className="w-48 rounded-full"
-                    alt="ma chuda"
+                    alt="OneTap Logo"
                   />
                 </div>
               </div>
@@ -149,23 +132,22 @@ const HeroSection = () => {
                 Ek Tap, <span className="text-orange-500">Sab Set!</span>
               </h1>
               <p className="text-xl md:text-2xl mb-8 text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                Get instant help from nearby verified mechanics.
+                Get instant help from verified mechanics. Book services, browse
+                mechanics, track bookings - all in one place.
                 <span className="block mt-2 text-blue-600 font-semibold">
                   Anytime. Anywhere.
                 </span>
               </p>
             </div>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons - Fixed phone numbers */}
             <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
               <button
-                onClick={() => {
-                  window.location.href = "tel:9584279012";
-                }}
+                onClick={() => navigate("/services")}
                 className="group bg-gradient-to-r from-red-500 to-orange-500 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:from-red-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
                 <span className="flex items-center justify-center gap-2">
-                  <Siren /> Emergency Help Now
+                  <Siren /> Book Service Now
                   <span className="group-hover:translate-x-1 transition-transform">
                     →
                   </span>
@@ -173,11 +155,11 @@ const HeroSection = () => {
               </button>
               <button
                 onClick={() => {
-                  window.location.href = "tel: 88896-09747";
+                  window.location.href = "tel:+918889609747";
                 }}
-                className=" flex gap-2 border-2 border-blue-500 text-blue-600 px-10 py-4 rounded-2xl font-bold text-lg hover:bg-blue-500 hover:text-white transition-all duration-300 transform hover:scale-105"
+                className="flex gap-2 border-2 border-blue-500 text-blue-600 px-10 py-4 rounded-2xl font-bold text-lg hover:bg-blue-500 hover:text-white transition-all duration-300 transform hover:scale-105"
               >
-                <Phone /> Call: +91 88896-09747
+                <Phone /> Call: +91 88896 09747
               </button>
             </div>
 
@@ -217,8 +199,6 @@ const HeroSection = () => {
                 <p className="text-gray-600 leading-relaxed">
                   {benefit.description}
                 </p>
-
-                {/* Progress indicator */}
                 <div className="mt-4 h-1 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className={`h-full bg-gradient-to-r ${
@@ -232,32 +212,39 @@ const HeroSection = () => {
             ))}
           </div>
 
-          {/* Emergency Banner - Softer */}
+          {/* Emergency Banner */}
           <div className="mt-16 bg-gradient-to-r from-orange-100 to-red-100 border border-orange-200 rounded-3xl p-8 text-center shadow-lg">
             <div className="flex items-center justify-center gap-4 mb-4">
               <span className="text-3xl animate-pulse">🚨</span>
               <h2 className="text-2xl font-bold text-gray-800">
-                Emergency? We're Here 24/7!
+                Need Help Right Now?
               </h2>
               <span className="text-3xl animate-pulse">🚨</span>
             </div>
             <p className="text-lg mb-4 text-gray-700">
-              Stuck in the middle of nowhere? Don't panic! Our emergency
-              response team is standing by.
+              Stuck on the road? Book a verified mechanic instantly.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <button className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-8 py-3 rounded-xl font-bold hover:from-red-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105">
-                📱 Request Emergency Service
-              </button>
-              <button className="border-2 border-red-500 text-red-500 px-8 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all duration-300">
-                📍 Share Your Location
+              <Link
+                to="/services"
+                className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-8 py-3 rounded-xl font-bold hover:from-red-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105"
+              >
+                📱 Book Emergency Service
+              </Link>
+              <button
+                onClick={() => {
+                  window.location.href = "tel:+918889609747";
+                }}
+                className="border-2 border-red-500 text-red-500 px-8 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all duration-300"
+              >
+                📞 Call Support
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Quick Navigation Section */}
+      {/* Quick Navigation Section - Updated Routes */}
       <section className="bg-white py-16">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
@@ -265,21 +252,19 @@ const HeroSection = () => {
           </h2>
           <div className="grid md:grid-cols-4 gap-6">
             {quickSections.map((section, index) => (
-              <a
+              <Link
                 key={index}
-                href={section.link}
-                className=" group no-underline bg-gray-50 rounded-2xl p-6 text-center hover:bg-gradient-to-br hover:from-orange-50 hover:to-red-50 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+                to={section.link}
+                className="group no-underline bg-gray-50 rounded-2xl p-6 text-center hover:bg-gradient-to-br hover:from-orange-50 hover:to-red-50 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
               >
                 <div className="flex justify-center text-4xl mb-4">
                   {section.icon}
                 </div>
-                <h3 className=" text-lg font-bold text-gray-900 mb-2">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
                   {section.title}
                 </h3>
-                <p className=" text-gray-600 text-sm">
-                  {section.description}
-                </p>
-              </a>
+                <p className="text-gray-600 text-sm">{section.description}</p>
+              </Link>
             ))}
           </div>
         </div>
@@ -294,9 +279,8 @@ const HeroSection = () => {
                 About OneTap
               </h2>
               <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-                We're revolutionizing automotive service by bringing
-                professional mechanics directly to you. Founded with a simple
-                mission: make car troubles less stressful.
+                Connect with verified mechanics instantly. Book services, track
+                progress, and get roadside help - all from one platform.
               </p>
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-white rounded-lg p-4 text-center">
@@ -306,12 +290,12 @@ const HeroSection = () => {
                 <div className="bg-white rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-blue-500">500+</div>
                   <div className="text-sm text-gray-600">
-                    Certified Mechanics
+                    Verified Mechanics
                   </div>
                 </div>
               </div>
               <Link
-                to={"aboutus"}
+                to="/aboutus"
                 className="inline-block no-underline bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-red-600 hover:to-orange-600 transition-all duration-300"
               >
                 Learn More About Us
@@ -319,15 +303,15 @@ const HeroSection = () => {
             </div>
             <div className="bg-white rounded-3xl p-8 shadow-lg">
               <div className="text-center">
-                <div className=" flex justify-center text-6xl mb-4">
+                <div className="flex justify-center text-6xl mb-4">
                   <Car size={58} />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">
                   Our Mission
                 </h3>
                 <p className="text-gray-700">
-                  To make quality automotive service accessible, convenient, and
-                  trustworthy for everyone.
+                  Making automotive service simple, fast, and reliable for
+                  everyone, everywhere.
                 </p>
               </div>
             </div>
@@ -335,7 +319,7 @@ const HeroSection = () => {
         </div>
       </section>
 
-      {/* FAQ Section */}
+      {/* FAQ Section - Simplified */}
       <section className="bg-white py-16">
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
@@ -349,7 +333,7 @@ const HeroSection = () => {
               >
                 <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
                   <span className="text-orange-500">
-                    <FileQuestionMark />
+                    <FileQuestionMark size={20} />
                   </span>
                   {faq.question}
                 </h3>
@@ -359,10 +343,10 @@ const HeroSection = () => {
           </div>
           <div className="text-center mt-8">
             <Link
-              to={"/aboutus/faq"}
+              to="/support"
               className="inline-block border-2 no-underline border-orange-500 text-orange-500 px-6 py-3 rounded-xl font-semibold hover:bg-orange-500 hover:text-white transition-all duration-300"
             >
-              View All FAQs
+              Visit Support Center
             </Link>
           </div>
         </div>
@@ -372,10 +356,11 @@ const HeroSection = () => {
       <section className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-16">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <div className="text-6xl mb-6">🚀</div>
-          <h2 className="text-3xl font-bold mb-4">Ready to Get Help?</h2>
+          <h2 className="text-3xl font-bold mb-4">
+            Ready to Get Your Car Fixed?
+          </h2>
           <p className="text-xl mb-8 opacity-90">
-            Don't let car troubles ruin your day. Get professional help in
-            minutes.
+            Don't wait. Book verified mechanics and get back on the road fast.
           </p>
           <div className="flex items-center flex-col sm:flex-row justify-center gap-4">
             <button
@@ -383,13 +368,15 @@ const HeroSection = () => {
               className="flex gap-2 items-center bg-gradient-to-r from-red-500 to-orange-500 text-white px-8 py-4 rounded-xl font-bold hover:from-red-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105"
             >
               <Siren className="w-5 h-5" />
-              Request Service Now
+              Book Service Now
             </button>
-
-            <button className="flex gap-2  items-center border-2 border-white text-white px-8 py-4 rounded-xl font-bold bg-transparent hover:border-transparent hover:bg-gradient-to-r hover:from-red-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105">
-              <Phone className="w-5 h-5" />
-              Call Emergency Line
-            </button>
+            <Link
+              to="/browse"
+              className="flex gap-2 items-center border-2 border-white text-white px-8 py-4 rounded-xl font-bold bg-transparent hover:border-transparent hover:bg-gradient-to-r hover:from-red-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105"
+            >
+              <Users className="w-5 h-5" />
+              Browse Mechanics
+            </Link>
           </div>
         </div>
       </section>

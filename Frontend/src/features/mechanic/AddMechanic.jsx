@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from "react";
-import Navbar from "./Navbar";
+import { useState, useEffect } from "react";
 import {
   Car,
   User,
-  MapPin,
-  Phone,
-  Mail,
   FileText,
   CheckCircle,
-  AlertCircle,
   Wrench,
   Star,
   Clock,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { MechanicApplicationTerms } from "../pages/MechanicTerns";
+import { MechanicApplicationTerms } from "./MechanicTerns";
 
 const AddMechanicPage = () => {
   const [formData, setFormData] = useState({
@@ -159,7 +154,6 @@ const AddMechanicPage = () => {
 
   return (
     <>
-      
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         {/* Hero Section */}
         <div className="bg-gradient-to-br from-red-600 via-red-500 to-orange-500 text-white relative overflow-hidden">
@@ -560,13 +554,18 @@ const AddMechanicPage = () => {
                 </p>
 
                 <div className="text-sm text-gray-500 mt-2">
-                  After submitting, you will receive an email confirmation and our team will review your application within 2-3 business days. If selected, we will contact you for the next steps.
+                  After submitting, you will receive an email confirmation and
+                  our team will review your application within 2-3 business
+                  days. If selected, we will contact you for the next steps.
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <MechanicApplicationTerms showMechanicTerms={showTerms} setShowMechanicTerms={setShowTerms} />
+        <MechanicApplicationTerms
+          showMechanicTerms={showTerms}
+          setShowMechanicTerms={setShowTerms}
+        />
       </div>
     </>
   );

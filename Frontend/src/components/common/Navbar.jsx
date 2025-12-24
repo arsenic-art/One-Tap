@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import Logo from "../assets/OneTapLogo.png";
-import { getRandomAvatar } from "../utils/getAvatar";
-import { useAuthStore } from "../store/useAuthStore";
+import Logo from "../../assets/OneTapLogo.png";
+import { getRandomAvatar } from "../../utils/getAvatar";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const navLinkClass = (isActive) =>
   `no-underline px-3 py-2 text-sm font-medium transition-all duration-300 relative group ${
@@ -14,7 +14,6 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Role helper
   const isMechanic = user?.role === "mechanic";
 
   const toggleMenu = useCallback(() => setMenuOpen((prev) => !prev), []);

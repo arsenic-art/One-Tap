@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   SlidersHorizontal,
@@ -71,7 +71,7 @@ const BrowseMechanics = () => {
       const qs = buildQueryString();
       const res = await fetch(`http://localhost:7777/api/mechanicsList?${qs}`, {
         method: "GET",
-        credentials: "include", 
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -110,10 +110,8 @@ const BrowseMechanics = () => {
     }
   };
 
-  // Fetch when filters/page change
   useEffect(() => {
     fetchMechanics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [city, vehicle, service, page, limit]);
 
   const handleApplyFilters = () => {
@@ -337,7 +335,7 @@ const BrowseMechanics = () => {
 
               <div className="grid md:grid-cols-2 gap-4">
                 {filteredMechanics.map((mec) => {
-                    console.log(mec);
+                  console.log(mec);
                   const firstImage =
                     mec.storeImages && mec.storeImages.length > 0
                       ? mec.storeImages[0].url

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
-import { TermsOfService, PrivacyPolicy } from "../pages/TermsAndPrivacyPage";
-import { useAuthStore } from "../store/useAuthStore";
+import { TermsOfService, PrivacyPolicy } from "../../pages/TermsAndPrivacyPage";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const API_BASE = "http://localhost:7777/api/";
 
@@ -10,7 +10,6 @@ const AuthPage = ({ signUp }) => {
   const [isLogin, setIsLogin] = useState(Boolean(signUp));
   const navigate = useNavigate();
   const loginSuccess = useAuthStore((s) => s.loginSuccess);
-
 
   const [formData, setFormData] = useState({
     email: "",
@@ -149,7 +148,7 @@ const AuthPage = ({ signUp }) => {
         return;
       }
 
-      loginSuccess(data); 
+      loginSuccess(data);
       navigate(isUser ? "/services" : "/dashboard");
     } catch (err) {
       setApiError("Connection failed. Check your backend server.");

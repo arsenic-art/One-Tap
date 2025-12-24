@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   User as UserIcon,
@@ -12,7 +12,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../store/useAuthStore";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -85,7 +85,8 @@ const ProfileEditPage = () => {
       if (password.length < 6) {
         newErrors.password = "Password must be at least 6 characters.";
       } else if (!SPECIAL_CHAR_REGEX.test(password)) {
-        newErrors.password = "Password must contain at least one special character.";
+        newErrors.password =
+          "Password must contain at least one special character.";
       }
 
       if (password !== confirmPassword) {
@@ -419,7 +420,7 @@ const ProfileEditPage = () => {
                     fieldErrors.confirmPassword
                       ? "border-red-500"
                       : "border-gray-200 focus:border-red-500"
-                    }`}
+                  }`}
                   placeholder="Repeat new password"
                 />
                 {fieldErrors.confirmPassword && (

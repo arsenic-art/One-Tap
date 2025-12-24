@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   User as UserIcon,
   Mail,
@@ -11,7 +11,7 @@ import {
   Shield,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../store/useAuthStore";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -20,17 +20,14 @@ const ProfilePage = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // if store still checking, let it finish
     if (isCheckingAuth) return;
     if (!user && !isLoggedIn) {
-      // try once more (e.g. direct load)
       checkAuth();
     }
   }, [isCheckingAuth, user, isLoggedIn, checkAuth]);
 
   const handleLogout = async () => {
     try {
-      // optional backend logout if you add it
       await fetch("http://localhost:7777/api/user/logout", {
         method: "POST",
         credentials: "include",

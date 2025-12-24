@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,

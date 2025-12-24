@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Search,
   SlidersHorizontal,
   MapPin,
-  Car,
-  Bike,
   Wrench,
   ChevronLeft,
   ChevronRight,
@@ -197,7 +195,7 @@ const FindMechanicAndRequest = () => {
     setMessage(pieces.join(" "));
   };
 
-    const handleSubmitRequest = async (e) => {
+  const handleSubmitRequest = async (e) => {
     e.preventDefault();
     setRequestError("");
     setRequestSuccess("");
@@ -230,7 +228,7 @@ const FindMechanicAndRequest = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            mechanicId: selectedMechanic.mechanicID, 
+            mechanicId: selectedMechanic.mechanicID,
             problemType: vehicleTypeForRequest,
             serviceType: serviceTypeForRequest,
             message,
@@ -251,7 +249,6 @@ const FindMechanicAndRequest = () => {
       setIsSubmittingRequest(false);
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">

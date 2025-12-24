@@ -1,9 +1,20 @@
-import { X, FileText, Wrench, Shield, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import {
+  X,
+  FileText,
+  Wrench,
+  Shield,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+} from "lucide-react";
 
-export const MechanicApplicationTerms = ({ showMechanicTerms, setShowMechanicTerms }) => (
+export const MechanicApplicationTerms = ({
+  showMechanicTerms,
+  setShowMechanicTerms,
+}) => (
   <div
     className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${
-      showMechanicTerms ? 'opacity-100 visible' : 'opacity-0 invisible'
+      showMechanicTerms ? "opacity-100 visible" : "opacity-0 invisible"
     }`}
   >
     {/* Backdrop */}
@@ -15,7 +26,7 @@ export const MechanicApplicationTerms = ({ showMechanicTerms, setShowMechanicTer
     {/* Modal */}
     <div
       className={`relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden transform transition-all duration-300 ${
-        showMechanicTerms ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'
+        showMechanicTerms ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
       }`}
     >
       {/* Header */}
@@ -23,7 +34,9 @@ export const MechanicApplicationTerms = ({ showMechanicTerms, setShowMechanicTer
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <FileText className="h-6 w-6" />
-            <h2 className="text-xl font-bold">Mechanic Application – Terms & Conditions</h2>
+            <h2 className="text-xl font-bold">
+              Mechanic Application – Terms & Conditions
+            </h2>
           </div>
           <button
             onClick={() => setShowMechanicTerms(false)}
@@ -37,7 +50,9 @@ export const MechanicApplicationTerms = ({ showMechanicTerms, setShowMechanicTer
       {/* Content */}
       <div className="p-6 overflow-y-auto max-h-[70vh]">
         <div className="prose max-w-none">
-          <p className="text-gray-600 mb-6 text-sm">Last updated: August 14, 2025</p>
+          <p className="text-gray-600 mb-6 text-sm">
+            Last updated: August 14, 2025
+          </p>
 
           <div className="space-y-6">
             <section>
@@ -48,8 +63,12 @@ export const MechanicApplicationTerms = ({ showMechanicTerms, setShowMechanicTer
               <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
                 <li>Applicants must be at least 18 years old.</li>
                 <li>Must hold valid mechanic certifications and licenses.</li>
-                <li>Must have at least 1 year of hands-on automotive experience.</li>
-                <li>No criminal record related to theft, fraud, or violence.</li>
+                <li>
+                  Must have at least 1 year of hands-on automotive experience.
+                </li>
+                <li>
+                  No criminal record related to theft, fraud, or violence.
+                </li>
               </ul>
             </section>
 
@@ -59,7 +78,9 @@ export const MechanicApplicationTerms = ({ showMechanicTerms, setShowMechanicTer
                 2. Verification Process
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                By applying, you consent to identity verification, license validation, and background checks conducted by OneTap or its authorized partners.
+                By applying, you consent to identity verification, license
+                validation, and background checks conducted by OneTap or its
+                authorized partners.
               </p>
             </section>
 
@@ -71,7 +92,9 @@ export const MechanicApplicationTerms = ({ showMechanicTerms, setShowMechanicTer
               <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
                 <li>Be punctual for all assigned jobs.</li>
                 <li>Provide accurate service completion updates.</li>
-                <li>Maintain professional behavior with customers and colleagues.</li>
+                <li>
+                  Maintain professional behavior with customers and colleagues.
+                </li>
                 <li>Follow all safety guidelines and company protocols.</li>
               </ul>
             </section>
@@ -82,7 +105,8 @@ export const MechanicApplicationTerms = ({ showMechanicTerms, setShowMechanicTer
                 4. Code of Conduct
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                Any misconduct, fraudulent activity, or breach of trust may result in suspension or permanent removal from the platform.
+                Any misconduct, fraudulent activity, or breach of trust may
+                result in suspension or permanent removal from the platform.
               </p>
             </section>
 
@@ -92,7 +116,9 @@ export const MechanicApplicationTerms = ({ showMechanicTerms, setShowMechanicTer
                 5. Agreement
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                By submitting this application, you confirm that all information provided is true and complete. You also agree to abide by the policies and operational guidelines of OneTap.
+                By submitting this application, you confirm that all information
+                provided is true and complete. You also agree to abide by the
+                policies and operational guidelines of OneTap.
               </p>
             </section>
           </div>

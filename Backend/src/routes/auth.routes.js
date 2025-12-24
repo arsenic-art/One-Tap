@@ -7,7 +7,7 @@ const {
   updateUserProfile,
   verifyUserEmail,
   forgotPassword,
-  resetPassword,
+  verifyOtpAndResetPassword
 } = require("../controllers/authController");
 const { userAuth } = require("../middlewares/auth.middleware");
 const upload = require("../middlewares/upload.middleware");
@@ -26,6 +26,6 @@ router
   );
 
 router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
+router.post("/reset-password", verifyOtpAndResetPassword);
 
 module.exports = router;

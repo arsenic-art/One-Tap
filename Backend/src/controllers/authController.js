@@ -217,37 +217,78 @@ const updateUserProfile = async (req, res) => {
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    
+    // Set OTP with 10 min expiry
+    user.otpCode = otp;
+    user.otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    
+    await user.save();
+
+    // Send OTP via email
+    await sendEmail({
+      to: user.email,
+      subject: "OneTap Password Reset OTP",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #dc2626;">Your OneTap Password Reset OTP</h2>
+          <div style="background: #fef3c7; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+            <h1 style="font-size: 48px; font-weight: bold; color: #b91c1c; margin: 0; letter-spacing: 8px;">
+              ${otp}
+            </h1>
+            <p style="margin: 10px 0 0 0; color: #92400e;">This code expires in 10 minutes</p>
+          </div>
+          <p>If you didn't request this, please ignore this email.</p>
+        </div>
+      `,
+    });
+
+    res.json({ message: "OTP sent to your email" });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({ message: "Failed to send OTP" });
   }
-
-  const resetToken = crypto.randomBytes(32).toString("hex");
-
-  const hashedToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
-
-  user.resetPasswordToken = hashedToken;
-  user.resetPasswordExpiry = Date.now() + 15 * 60 * 1000; // 15 mins
-
-  await user.save();
-
-  const resetLink = `${process.env.FRONTEND_URL}/api/user/reset-password?token=${resetToken}`;
-
-  await sendEmail({
-    to: user.email,
-    subject: "Reset your password",
-    html: `
-      <p>You requested a password reset</p>
-      <a href="${resetLink}">Click here to reset password</a>
-      <p>This link expires in 15 minutes</p>
-    `,
-  });
-
-  res.json({ message: "Password reset email sent" });
 };
+
+const verifyOtpAndResetPassword = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({ 
+      email, 
+      otpCode: otp,
+      otpExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ 
+        message: "Invalid or expired OTP" 
+      });
+    }
+
+    user.otpCode = undefined;
+    user.otpExpiry = undefined;
+    user.password = newPassword;
+    
+    await user.save();
+
+    res.json({ 
+      message: "Password reset successful",
+      success: true 
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ message: "Failed to reset password" });
+  }
+};
+
 
 const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
@@ -281,4 +322,5 @@ module.exports = {
   verifyUserEmail,
   forgotPassword,
   resetPassword,
+  verifyOtpAndResetPassword
 };

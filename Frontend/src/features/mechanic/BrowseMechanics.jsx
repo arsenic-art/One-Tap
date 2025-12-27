@@ -10,8 +10,12 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
+  Info,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../store/useAuthStore";
+import { useMechanicAuthStore } from "../../store/useAuthStore";
+
 const VEHICLE_OPTIONS = [
   { value: "", label: "Any Vehicle" },
   { value: "Car", label: "Car" },
@@ -36,6 +40,11 @@ const DEFAULT_LIMIT = 10;
 
 const BrowseMechanics = () => {
   const navigate = useNavigate();
+
+  // simplified auth access - the Route guarantees we have data now
+  const { user } = useAuthStore();
+  const { mechanic } = useMechanicAuthStore();
+
   const [city, setCity] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [service, setService] = useState("");
@@ -52,6 +61,52 @@ const BrowseMechanics = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [hasAddress, setHasAddress] = useState(false);
+  const [checkingAddress, setCheckingAddress] = useState(true);
+  const [defaultAddress, setDefaultAddress] = useState(null);
+
+  const currentUser = mechanic || user;
+  const isMechanic = currentUser?.role === "mechanic";
+  const isUser = currentUser?.role === "user" || (!mechanic && user);
+  const canMakeBooking = isUser && !isMechanic;
+
+  useEffect(() => {
+    const checkAddress = async () => {
+      if (isMechanic) {
+        setCheckingAddress(false);
+        setHasAddress(true);
+        return;
+      }
+
+      if (!currentUser) {
+        setCheckingAddress(false);
+        setHasAddress(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:7777/api/address/default", {
+          credentials: "include",
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setDefaultAddress(data.address);
+          setHasAddress(true);
+        } else {
+          setHasAddress(false);
+        }
+      } catch (err) {
+        console.error("Address check error:", err);
+        setHasAddress(false);
+      } finally {
+        setCheckingAddress(false);
+      }
+    };
+
+    checkAddress();
+  }, [currentUser, isMechanic]);
 
   const buildQueryString = () => {
     const params = new URLSearchParams();
@@ -151,6 +206,17 @@ const BrowseMechanics = () => {
     );
   });
 
+  if (checkingAddress) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="flex items-center text-gray-600">
+          <Loader2 className="animate-spin mr-2" size={20} />
+          <span>Loading address info...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
@@ -171,9 +237,76 @@ const BrowseMechanics = () => {
       </div>
 
       {/* Filters + Results */}
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+        {/* Mechanic account restriction banner */}
+        {isMechanic && (
+          <div className="bg-blue-50 border-2 border-blue-300 rounded-3xl p-5 flex items-start gap-3">
+            <Info className="text-blue-600 flex-shrink-0 mt-0.5" size={24} />
+            <div className="flex-1">
+              <p className="font-semibold text-blue-900 mb-1">
+                Mechanic Account - Browse Only Mode
+              </p>
+              <p className="text-sm text-blue-800">
+                You're logged in as a mechanic. You can browse other mechanics
+                but cannot create service requests or bookings. To make a
+                booking, please log in with a user account.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Address warning banner - ONLY for regular users */}
+        {isUser && !hasAddress && (
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 flex items-start gap-3">
+            <AlertCircle
+              className="text-amber-600 flex-shrink-0 mt-0.5"
+              size={24}
+            />
+            <div className="flex-1">
+              <p className="font-semibold text-amber-900 mb-1">
+                Service Address Required
+              </p>
+              <p className="text-sm text-amber-800 mb-3">
+                You need to add a service address before sending any request.
+                This helps mechanics locate you quickly.
+              </p>
+              <button
+                onClick={() => navigate("/addresses")}
+                className="px-4 py-2 bg-amber-600 text-white rounded-xl text-sm font-semibold hover:bg-amber-700 transition-all shadow-md"
+              >
+                Add Service Address
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Current address display (if exists) - ONLY for regular users */}
+        {isUser && hasAddress && defaultAddress && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-4 flex items-start gap-3">
+            <MapPin
+              className="text-emerald-600 flex-shrink-0 mt-0.5"
+              size={20}
+            />
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-emerald-900 mb-1">
+                Service Location
+              </p>
+              <p className="text-sm text-emerald-800">
+                {defaultAddress.serviceLine}, {defaultAddress.city},{" "}
+                {defaultAddress.state} - {defaultAddress.pincode}
+              </p>
+              <button
+                onClick={() => navigate("/addresses")}
+                className="text-xs text-emerald-700 hover:text-emerald-900 underline mt-1"
+              >
+                Change address
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Filters card */}
-        <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
+        <div className="bg-white rounded-3xl shadow-2xl p-6">
           {/* Search + Filters label */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             {/* Search (frontend only) */}
@@ -335,7 +468,6 @@ const BrowseMechanics = () => {
 
               <div className="grid md:grid-cols-2 gap-4">
                 {filteredMechanics.map((mec) => {
-                  console.log(mec);
                   const firstImage =
                     mec.storeImages && mec.storeImages.length > 0
                       ? mec.storeImages[0].url
@@ -416,17 +548,39 @@ const BrowseMechanics = () => {
                         <span className="text-[11px] text-gray-500">
                           Approved mechanic • Experience-based listing
                         </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigate(`/service-request/${mec.mechanicID}`, {
-                              state: { mechanic: mec },
-                            })
-                          }
-                          className="text-xs bg-gradient-to-r from-red-600 to-orange-500 text-white px-3 py-1.5 rounded-xl font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300"
-                        >
-                          View &amp; Request
-                        </button>
+
+                        {/* Show different button based on role */}
+                        {isMechanic ? (
+                          <button
+                            type="button"
+                            disabled
+                            className="text-xs bg-gray-300 text-gray-500 px-3 py-1.5 rounded-xl font-semibold cursor-not-allowed"
+                            title="Mechanic accounts cannot make bookings"
+                          >
+                            Cannot Book
+                          </button>
+                        ) : !hasAddress && isUser ? (
+                          <button
+                            type="button"
+                            onClick={() => navigate("/addresses")}
+                            className="text-xs bg-amber-500 text-white px-3 py-1.5 rounded-xl font-semibold hover:bg-amber-600 transition-all duration-300"
+                          >
+                            Add Address First
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(`/service-request/${mec.mechanicID}`, {
+                                state: { mechanic: mec },
+                              })
+                            }
+                            disabled={!canMakeBooking}
+                            className="text-xs bg-gradient-to-r from-red-600 to-orange-500 text-white px-3 py-1.5 rounded-xl font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            View &amp; Request
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

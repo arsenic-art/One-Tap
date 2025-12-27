@@ -8,6 +8,8 @@ import {
   User,
   Wrench,
   RefreshCw,
+  PlayCircle,
+  XCircle,
 } from "lucide-react";
 
 const STATUS_STYLES = {
@@ -16,18 +18,42 @@ const STATUS_STYLES = {
     bg: "bg-amber-50",
     pill: "bg-amber-100 text-amber-800",
     label: "Pending",
+    icon: Clock,
   },
   accepted: {
+    text: "text-sky-700",
+    bg: "bg-sky-50",
+    pill: "bg-sky-100 text-sky-800",
+    label: "Accepted",
+    icon: CheckCircle,
+  },
+  "in-progress": {
+    text: "text-indigo-700",
+    bg: "bg-indigo-50",
+    pill: "bg-indigo-100 text-indigo-800",
+    label: "In Progress",
+    icon: PlayCircle,
+  },
+  completed: {
     text: "text-green-700",
     bg: "bg-green-50",
     pill: "bg-green-100 text-green-800",
-    label: "Accepted",
+    label: "Completed",
+    icon: CheckCircle,
   },
   rejected: {
     text: "text-red-700",
     bg: "bg-red-50",
     pill: "bg-red-100 text-red-800",
     label: "Rejected",
+    icon: XCircle,
+  },
+  cancelled: {
+    text: "text-gray-700",
+    bg: "bg-gray-50",
+    pill: "bg-gray-100 text-gray-800",
+    label: "Cancelled",
+    icon: XCircle,
   },
 };
 
@@ -45,8 +71,8 @@ const UserServiceRequests = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchRequests = async () => {
-    setIsLoading(true);
+  const fetchRequests = async (isBackground = false) => {
+    if (!isBackground) setIsLoading(true);
     setError("");
 
     try {
@@ -64,15 +90,21 @@ const UserServiceRequests = () => {
 
       setRequests(json.data || []);
     } catch (err) {
-      setError(err.message || "Something went wrong");
-      setRequests([]);
+      console.error(err);
+      if (!isBackground) setError(err.message || "Something went wrong");
     } finally {
-      setIsLoading(false);
+      if (!isBackground) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchRequests();
+
+    const interval = setInterval(() => {
+      fetchRequests(true);
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -101,7 +133,7 @@ const UserServiceRequests = () => {
           </p>
           <button
             type="button"
-            onClick={fetchRequests}
+            onClick={() => fetchRequests(false)}
             disabled={isLoading}
             className="flex items-center text-xs font-semibold px-3 py-1.5 rounded-xl border-2 border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
@@ -147,13 +179,24 @@ const UserServiceRequests = () => {
             {requests.map((req) => {
               const mechanic = req.mechanicId || {};
               const statusKey = req.status || "pending";
+
               const statusStyle =
                 STATUS_STYLES[statusKey] || STATUS_STYLES.pending;
+
+              const StatusIcon = statusStyle.icon;
 
               return (
                 <div
                   key={req._id}
-                  className="bg-white rounded-2xl shadow-md border border-gray-100 p-4 md:p-5"
+                  className={`bg-white rounded-2xl shadow-md border-l-4 p-4 md:p-5 transition-all hover:shadow-lg ${
+                    statusKey === "pending"
+                      ? "border-amber-400"
+                      : statusKey === "accepted"
+                      ? "border-sky-400"
+                      : statusKey === "completed"
+                      ? "border-green-500"
+                      : "border-gray-200"
+                  }`}
                 >
                   {/* Top row: status + created time */}
                   <div className="flex items-center justify-between mb-3">
@@ -161,34 +204,28 @@ const UserServiceRequests = () => {
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wide ${statusStyle.pill}`}
                       >
-                        {statusKey === "pending" && (
-                          <Clock size={12} className="mr-1" />
-                        )}
-                        {statusKey === "accepted" && (
-                          <CheckCircle size={12} className="mr-1" />
-                        )}
-                        {statusKey === "rejected" && (
-                          <AlertCircle size={12} className="mr-1" />
-                        )}
+                        <StatusIcon size={12} className="mr-1" />
                         {statusStyle.label}
                       </span>
                       <span className="text-[11px] text-gray-500">
-                        Created: {formatDateTime(req.createdAt)}
+                        {formatDateTime(req.createdAt)}
                       </span>
                     </div>
-                    <span className="text-[11px] text-gray-400">
-                      Updated: {formatDateTime(req.updatedAt)}
-                    </span>
+                    {req.estimatedAmount && (
+                      <span className="text-sm font-bold text-gray-700 bg-gray-50 px-2 py-1 rounded-lg">
+                        ₹{req.estimatedAmount}
+                      </span>
+                    )}
                   </div>
 
                   {/* Mechanic info */}
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                       {mechanic.profileImage ? (
                         <img
                           src={mechanic.profileImage}
-                          alt={`${mechanic.firstName} ${mechanic.lastName}`}
-                          className="w-full h-full rounded-full object-cover"
+                          alt={`${mechanic.firstName}`}
+                          className="w-full h-full object-cover"
                         />
                       ) : (
                         <User size={20} className="text-red-600" />
@@ -196,10 +233,8 @@ const UserServiceRequests = () => {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-900">
-                        {mechanic.firstName || mechanic.lastName
-                          ? `${mechanic.firstName || ""} ${
-                              mechanic.lastName || ""
-                            }`.trim()
+                        {mechanic.firstName
+                          ? `${mechanic.firstName} ${mechanic.lastName || ""}`
                           : "Mechanic"}
                       </p>
                       {mechanic.email && (
@@ -212,23 +247,26 @@ const UserServiceRequests = () => {
                   </div>
 
                   {/* Request details */}
-                  <div className="grid md:grid-cols-3 gap-3 text-sm">
+                  <div className="grid md:grid-cols-3 gap-3 text-sm border-t border-gray-100 pt-3 mt-3">
                     <div>
-                      <p className="text-xs text-gray-500">Vehicle Type</p>
+                      <p className="text-xs text-gray-500">Vehicle</p>
                       <p className="font-semibold text-gray-800">
                         {req.problemType || "-"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Service Type</p>
+                      <p className="text-xs text-gray-500">Service</p>
                       <p className="font-semibold text-gray-800">
                         {req.serviceType || "-"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Status</p>
-                      <p className={`font-semibold ${statusStyle.text}`}>
-                        {statusStyle.label}
+                      <p className="text-xs text-gray-500">Location</p>
+                      <p
+                        className="font-medium text-gray-800 truncate"
+                        title={req.userLocation?.address}
+                      >
+                        {req.userLocation?.city || "City not set"}
                       </p>
                     </div>
                   </div>
@@ -236,9 +274,9 @@ const UserServiceRequests = () => {
                   {/* Message */}
                   {req.message && (
                     <div className="mt-3">
-                      <p className="text-xs text-gray-500 mb-1">Your Message</p>
-                      <p className="text-sm text-gray-700 bg-gray-50 rounded-xl px-3 py-2">
-                        {req.message}
+                      <p className="text-xs text-gray-500 mb-1">Note</p>
+                      <p className="text-sm text-gray-600 italic bg-gray-50 rounded-lg px-3 py-2">
+                        "{req.message}"
                       </p>
                     </div>
                   )}

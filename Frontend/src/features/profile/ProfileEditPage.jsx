@@ -1,3 +1,4 @@
+// src/features/profile/ProfileEditPage.jsx
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
+import { useMechanicAuthStore } from "../../store/useAuthStore"; // ✅ Add this
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -20,7 +22,20 @@ const SPECIAL_CHAR_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
 
 const ProfileEditPage = () => {
   const navigate = useNavigate();
-  const { user, isCheckingAuth, checkAuth, loginSuccess } = useAuthStore();
+  
+  // ✅ Get both auth stores
+  const {
+    user,
+    isCheckingAuth: userCheckingAuth,
+    checkAuth: checkUserAuth,
+    loginSuccess: userLoginSuccess,
+  } = useAuthStore();
+  
+  const {
+    mechanic,
+    isCheckingAuth: mechanicCheckingAuth,
+    loginSuccess: mechanicLoginSuccess,
+  } = useMechanicAuthStore();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -42,20 +57,24 @@ const ProfileEditPage = () => {
     profileImage: "",
   });
 
-  useEffect(() => {
-    if (!user && !isCheckingAuth) {
-      checkAuth();
-    }
-  }, [user, isCheckingAuth, checkAuth]);
+  // ✅ Combined auth state
+  const currentUser = mechanic || user;
+  const isCheckingAuth = userCheckingAuth || mechanicCheckingAuth;
 
   useEffect(() => {
-    if (user) {
-      setFirstName(user.firstName || "");
-      setLastName(user.lastName || "");
-      setPhoneNumber(user.phoneNumber || "");
-      setPreviewSrc(user.profileImage || "");
+    if (!currentUser && !isCheckingAuth) {
+      checkUserAuth();
     }
-  }, [user]);
+  }, [currentUser, isCheckingAuth, checkUserAuth]);
+
+  useEffect(() => {
+    if (currentUser) {
+      setFirstName(currentUser.firstName || "");
+      setLastName(currentUser.lastName || "");
+      setPhoneNumber(currentUser.phoneNumber || "");
+      setPreviewSrc(currentUser.profileImage || "");
+    }
+  }, [currentUser]);
 
   const validateFields = () => {
     const newErrors = {
@@ -164,7 +183,14 @@ const ProfileEditPage = () => {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch("http://localhost:7777/api/user/profile", {
+      if (!currentUser) throw new Error("User not found in state");
+
+      const base =
+        currentUser.role === "mechanic"
+          ? "http://localhost:7777/api/mechanic/profile"
+          : "http://localhost:7777/api/user/profile";
+
+      const res = await fetch(base, {
         method: "PUT",
         credentials: "include",
         body: formData,
@@ -173,7 +199,13 @@ const ProfileEditPage = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to update profile");
 
-      loginSuccess(data);
+      // ✅ Update correct store based on role
+      if (currentUser.role === "mechanic") {
+        mechanicLoginSuccess(data);
+      } else {
+        userLoginSuccess(data);
+      }
+      
       setPreviewSrc(data.profileImage || "");
       setPassword("");
       setConfirmPassword("");
@@ -185,7 +217,7 @@ const ProfileEditPage = () => {
     }
   };
 
-  if (isCheckingAuth && !user) {
+  if (isCheckingAuth && !currentUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="flex items-center text-gray-600">
@@ -196,7 +228,7 @@ const ProfileEditPage = () => {
     );
   }
 
-  if (!user) {
+  if (!currentUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="bg-white rounded-3xl shadow-2xl p-8 text-center max-w-sm w-full">
@@ -219,7 +251,7 @@ const ProfileEditPage = () => {
   }
 
   const fullName =
-    `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User";
+    `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim() || "User";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -266,7 +298,7 @@ const ProfileEditPage = () => {
                 <p className="text-lg font-bold text-gray-900">{fullName}</p>
                 <p className="text-sm text-gray-600 flex items-center">
                   <Mail size={14} className="mr-1" />
-                  {user.email}
+                  {currentUser.email}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   Email cannot be changed for now.

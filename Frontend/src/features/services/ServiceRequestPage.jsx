@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -40,6 +40,11 @@ const ServiceRequestPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  
+  // Address checking state
+  const [hasAddress, setHasAddress] = useState(false);
+  const [checkingAddress, setCheckingAddress] = useState(true);
+  const [defaultAddress, setDefaultAddress] = useState(null);
 
   const availableServices = useMemo(() => {
     if (mechanic?.servicesProvided?.length) {
@@ -47,6 +52,32 @@ const ServiceRequestPage = () => {
     }
     return SERVICE_TYPES;
   }, [mechanic]);
+
+  // Check for saved address on mount
+  useEffect(() => {
+    const checkAddress = async () => {
+      try {
+        const res = await fetch("http://localhost:7777/api/address/default", {
+          credentials: "include",
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setDefaultAddress(data.address);
+          setHasAddress(true);
+        } else {
+          setHasAddress(false);
+        }
+      } catch (err) {
+        console.error("Address check error:", err);
+        setHasAddress(false);
+      } finally {
+        setCheckingAddress(false);
+      }
+    };
+
+    checkAddress();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,10 +89,16 @@ const ServiceRequestPage = () => {
       return;
     }
 
+    // Check address again before submit
+    if (!hasAddress) {
+      setError("Please add a service address before sending request.");
+      return;
+    }
+
     // Extra confirmation
     const ok = window.confirm(
       "Once you send this request, the message cannot be edited.\n\nAre you sure you want to submit?"
-    ); // [web:43]
+    );
     if (!ok) return;
 
     setIsSubmitting(true);
@@ -92,12 +129,28 @@ const ServiceRequestPage = () => {
 
       setSuccess("Service request sent to mechanic.");
       setMessage("");
+      
+      // Navigate to bookings after 2 seconds
+      setTimeout(() => {
+        navigate("/bookings");
+      }, 2000);
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (checkingAddress) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="flex items-center text-gray-600">
+          <Loader2 className="animate-spin mr-2" size={20} />
+          <span>Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -126,6 +179,48 @@ const ServiceRequestPage = () => {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
+        {/* Address warning banner */}
+        {!hasAddress && (
+          <div className="mb-6 bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 flex items-start gap-3">
+            <AlertCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={24} />
+            <div className="flex-1">
+              <p className="font-semibold text-amber-900 mb-1">
+                Service Address Required
+              </p>
+              <p className="text-sm text-amber-800 mb-3">
+                You need to add a service address before sending a request. This helps the mechanic locate you quickly.
+              </p>
+              <button
+                onClick={() => navigate("/addresses")}
+                className="px-4 py-2 bg-amber-600 text-white rounded-xl text-sm font-semibold hover:bg-amber-700 transition-all shadow-md"
+              >
+                Add Service Address
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Current address display (if exists) */}
+        {hasAddress && defaultAddress && (
+          <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-3xl p-4 flex items-start gap-3">
+            <MapPin className="text-emerald-600 flex-shrink-0 mt-0.5" size={20} />
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-emerald-900 mb-1">
+                Service Location
+              </p>
+              <p className="text-sm text-emerald-800">
+                {defaultAddress.serviceLine}, {defaultAddress.city}, {defaultAddress.state} - {defaultAddress.pincode}
+              </p>
+              <button
+                onClick={() => navigate("/addresses")}
+                className="text-xs text-emerald-700 hover:text-emerald-900 underline mt-1"
+              >
+                Change address
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-5 gap-6">
           {/* Mechanic summary */}
           <div className="md:col-span-2">
@@ -242,7 +337,8 @@ const ServiceRequestPage = () => {
                     value={problemType}
                     onChange={(e) => setProblemType(e.target.value)}
                     required
-                    className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-red-500"
+                    disabled={!hasAddress}
+                    className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Select vehicle type</option>
                     {VEHICLE_TYPES.map((v) => (
@@ -262,7 +358,8 @@ const ServiceRequestPage = () => {
                     value={serviceType}
                     onChange={(e) => setServiceType(e.target.value)}
                     required
-                    className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-red-500"
+                    disabled={!hasAddress}
+                    className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:border-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Select service</option>
                     {availableServices.map((s) => (
@@ -290,7 +387,8 @@ const ServiceRequestPage = () => {
                       onChange={(e) => setMessage(e.target.value)}
                       rows={4}
                       maxLength={maxLength}
-                      className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm pr-10"
+                      disabled={!hasAddress}
+                      className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm pr-10 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       placeholder="Example: Bike not starting, makes clicking sound when I press the starter..."
                     />
 
@@ -326,7 +424,7 @@ const ServiceRequestPage = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !hasAddress}
                     className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300 flex items-center disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (

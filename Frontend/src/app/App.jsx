@@ -11,10 +11,16 @@ import AdminDashboard from "../features/admin/AdminDashboard";
 import FeedPage from "../pages/Feed";
 import BrowseMechanics from "../features/mechanic/BrowseMechanics";
 import ServiceRequestPage from "../features/services/ServiceRequestPage";
-import ProtectedRoute from "../components/common/ProtectedRoute";
+import {
+  ProtectedUserRoute as ProtectedRoute,
+  ProtectedMechanicRoute,
+  ProtectedAnyUserRoute,
+} from "../components/common/ProtectedRoute";
 import MyBooking from "../features/bookings/MyBookings";
 import ProfilePage from "../features/profile/ProfilePage";
 import ProfileEditPage from "../features/profile/ProfileEditPage";
+import MechanicDashboard from "../features/mechanic/Dashboard";
+import AddressManagement from "../features/profile/AddressManagement";
 
 const appRouter = createBrowserRouter([
   {
@@ -34,15 +40,23 @@ const appRouter = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: "addresses",
+        element: (
+          <ProtectedRoute>
+            <AddressManagement />
+          </ProtectedRoute>
+        ),
+      },
       { path: "support", element: <Support /> },
       { path: "aboutus", element: <AboutUsPage /> },
 
       {
         path: "addmechanic",
         element: (
-          <ProtectedRoute>
+          <ProtectedMechanicRoute>
             <AddMechanicPage />
-          </ProtectedRoute>
+          </ProtectedMechanicRoute>
         ),
       },
       {
@@ -64,9 +78,9 @@ const appRouter = createBrowserRouter([
       {
         path: "browse",
         element: (
-          <ProtectedRoute>
+          <ProtectedAnyUserRoute>
             <BrowseMechanics />
-          </ProtectedRoute>
+          </ProtectedAnyUserRoute>
         ),
       },
       {
@@ -77,22 +91,30 @@ const appRouter = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: "dashboard",
+        element: (
+          <ProtectedMechanicRoute>
+            <MechanicDashboard />
+          </ProtectedMechanicRoute>
+        ),
+      },
 
       {
         path: "profile",
         element: (
-          <ProtectedRoute>
+          <ProtectedAnyUserRoute>
             <ProfilePage />
-          </ProtectedRoute>
+          </ProtectedAnyUserRoute>
         ),
       },
 
       {
         path: "profile/edit",
         element: (
-          <ProtectedRoute>
+          <ProtectedAnyUserRoute>
             <ProfileEditPage />
-          </ProtectedRoute>
+          </ProtectedAnyUserRoute>
         ),
       },
 

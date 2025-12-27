@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import Logo from "../../assets/OneTapLogo.png";
 import { getRandomAvatar } from "../../utils/getAvatar";
 import { useAuthStore } from "../../store/useAuthStore";
+import { useMechanicAuthStore } from "../../store/useAuthStore";
 
 const navLinkClass = (isActive) =>
   `no-underline px-3 py-2 text-sm font-medium transition-all duration-300 relative group ${
@@ -10,29 +11,44 @@ const navLinkClass = (isActive) =>
   }`;
 
 const Navbar = () => {
-  const { isLoggedIn, user, logout } = useAuthStore();
+  const { isLoggedIn: userLoggedIn, user, logout: userLogout } = useAuthStore();
+  const {
+    isLoggedIn: mechanicLoggedIn,
+    mechanic,
+    logout: mechanicLogout,
+  } = useMechanicAuthStore();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  const isMechanic = user?.role === "mechanic";
+  // Determine which auth is active
+  const isLoggedIn = userLoggedIn || mechanicLoggedIn;
+  const currentUser = mechanic || user; // Mechanic takes precedence
+  const isMechanic = currentUser?.role === "mechanic";
 
   const toggleMenu = useCallback(() => setMenuOpen((prev) => !prev), []);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   const handleLogout = useCallback(() => {
-    logout();
+    // Logout from both stores to be safe
+    if (mechanicLoggedIn) {
+      mechanicLogout();
+    }
+    if (userLoggedIn) {
+      userLogout();
+    }
     navigate("/");
     setMenuOpen(false);
-  }, [logout, navigate]);
+  }, [mechanicLoggedIn, userLoggedIn, mechanicLogout, userLogout, navigate]);
 
   const resolvedAvatar = useMemo(() => {
-    const nameToUse = user?.firstName || user?.name || "Account";
+    const nameToUse = currentUser?.firstName || currentUser?.name || "Account";
 
-    if (user?.profileImage) return user.profileImage;
-    if (user?.avatarUrl) return user.avatarUrl;
+    if (currentUser?.profileImage) return currentUser.profileImage;
+    if (currentUser?.avatarUrl) return currentUser.avatarUrl;
 
     return getRandomAvatar(nameToUse);
-  }, [user]);
+  }, [currentUser]);
 
   return (
     <nav className="bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-lg">
@@ -120,7 +136,7 @@ const Navbar = () => {
                   <span className="absolute inset-x-0 bottom-0 h-0.5 bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
                 </NavLink>
                 <NavLink
-                  to="/edit-service"
+                  to="/addmechanic"
                   className={({ isActive }) => navLinkClass(isActive)}
                 >
                   Edit Service
@@ -174,7 +190,7 @@ const Navbar = () => {
                       className="w-7 h-7 rounded-full object-cover border border-white shadow-sm"
                     />
                     <span className="text-sm font-semibold text-gray-700">
-                      {user?.firstName || "Profile"}
+                      {currentUser?.firstName || "Profile"}
                     </span>
                   </button>
                   <button
@@ -285,7 +301,7 @@ const Navbar = () => {
                     Dashboard
                   </NavLink>
                   <NavLink
-                    to="/edit-service"
+                    to="/addmechanic"
                     onClick={closeMenu}
                     className="block py-2 text-gray-700 font-medium"
                   >

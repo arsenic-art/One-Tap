@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
 import { TermsOfService, PrivacyPolicy } from "../../pages/TermsAndPrivacyPage";
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -24,6 +24,7 @@ const AuthPage = ({ signUp }) => {
 
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
+  const [apiSuccess, setApiSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [activeButton, setActiveButton] = useState("services");
@@ -55,6 +56,7 @@ const AuthPage = ({ signUp }) => {
     setIsLogin(Boolean(signUp));
     setActiveButton("services");
     setApiError("");
+    setApiSuccess("");
     setErrors({});
   }, [signUp]);
 
@@ -66,6 +68,7 @@ const AuthPage = ({ signUp }) => {
     }));
     if (errors[name]) setErrors((p) => ({ ...p, [name]: null }));
     if (apiError) setApiError("");
+    if (apiSuccess) setApiSuccess("");
   };
 
   useEffect(() => {
@@ -116,6 +119,7 @@ const AuthPage = ({ signUp }) => {
 
     setLoading(true);
     setApiError("");
+    setApiSuccess("");
 
     try {
       const currentBase = isUser
@@ -134,6 +138,7 @@ const AuthPage = ({ signUp }) => {
             password: formData.password,
             role: isUser ? "user" : "mechanic",
           };
+
       const res = await fetch(`${currentBase}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -148,10 +153,43 @@ const AuthPage = ({ signUp }) => {
         return;
       }
 
+      // Handle REGISTRATION success
+      if (!isLogin) {
+        setApiSuccess(
+          "Registration successful! Please check your email to verify your account before logging in."
+        );
+
+        // Clear form
+        setFormData({
+          email: "",
+          password: "",
+          confirmPassword: "",
+          firstName: "",
+          lastName: "",
+          phone: "",
+          agreeToTerms: false,
+          rememberMe: false,
+        });
+        setTermsAccepted(false);
+        setPrivacyAccepted(false);
+
+        // Switch to login mode after 3 seconds
+        setTimeout(() => {
+          setIsLogin(true);
+          setApiSuccess("");
+        }, 3000);
+        return;
+      }
+
       loginSuccess(data);
-      navigate(isUser ? "/services" : "/dashboard");
+
+      if (data.role === "mechanic") {
+        navigate("/dashboard");
+      } else {
+        navigate("/services");
+      }
     } catch (err) {
-      setApiError("Connection failed. Check your backend server.");
+      setApiError("Connection failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -200,6 +238,13 @@ const AuthPage = ({ signUp }) => {
             <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl flex items-center gap-3 animate-shake">
               <AlertCircle className="text-red-500 shrink-0" size={20} />
               <p className="text-red-700 text-sm font-medium">{apiError}</p>
+            </div>
+          )}
+
+          {apiSuccess && (
+            <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-xl flex items-center gap-3">
+              <CheckCircle className="text-green-500 shrink-0" size={20} />
+              <p className="text-green-700 text-sm font-medium">{apiSuccess}</p>
             </div>
           )}
 

@@ -7,45 +7,123 @@ import {
   Wrench,
   Star,
   Clock,
+  Loader2,
+  AlertCircle,
+  Edit2,
+  Calendar,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { MechanicApplicationTerms } from "./MechanicTerns";
+import { useMechanicAuthStore } from "../../store/useAuthStore";
+
+const SERVICE_OPTIONS = [
+  "Emergency Roadside Assistance",
+  "Mobile Oil Change",
+  "Brake Inspection & Repair",
+  "Battery Replacement",
+  "Tire Services",
+  "Engine Diagnostics",
+  "AC System Service",
+  "Pre-Purchase Inspection",
+  "Preventive Maintenance",
+];
+
+const VEHICLE_OPTIONS = ["Car", "Bike", "Both"];
 
 const AddMechanicPage = () => {
+  const { mechanic } = useMechanicAuthStore();
+  
+  // Application state management
+  const [existingApplication, setExistingApplication] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isLoadingApplication, setIsLoadingApplication] = useState(true);
+
   const [formData, setFormData] = useState({
-    fullName: "",
+    fullStoreName: "",
     email: "",
     phone: "",
-    location: "",
-    experience: "",
-    specialization: [],
+    city: "",
+    experienceYears: "",
+    vehicleSpecialization: "",
+    servicesProvided: [],
     certifications: "",
-    workingHours: "",
-    emergencyAvailable: false,
+    availability: {
+      monday: { available: false, hours: "" },
+      tuesday: { available: false, hours: "" },
+      wednesday: { available: false, hours: "" },
+      thursday: { available: false, hours: "" },
+      friday: { available: false, hours: "" },
+      saturday: { available: false, hours: "" },
+      sunday: { available: false, hours: "" },
+    },
     bio: "",
-    previousWork: "",
-    references: "",
   });
+
+  const [storeImages, setStoreImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState("");
   const [showTerms, setShowTerms] = useState(false);
 
-  const specializations = [
-    "Engine Repair",
-    "Brake Systems",
-    "Transmission",
-    "Electrical Systems",
-    "Air Conditioning",
-    "Tire Services",
-    "Oil Changes",
-    "Diagnostic Services",
-    "Body Work",
-    "Suspension",
-  ];
-
   const location = useLocation();
+
+  // Fetch existing application on mount
+  useEffect(() => {
+    const fetchApplication = async () => {
+      if (!mechanic) {
+        setIsLoadingApplication(false);
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:7777/api/mechanic-application/me", {
+          credentials: "include",
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setExistingApplication(data);
+          setIsEditMode(true);
+
+          // Prefill form data
+          setFormData({
+            fullStoreName: data.fullStoreName || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            city: data.city || "",
+            experienceYears: data.experienceYears?.toString() || "",
+            vehicleSpecialization: data.vehicleSpecialization || "",
+            servicesProvided: data.servicesProvided || [],
+            certifications: data.certifications || "",
+            availability: data.availability || {
+              monday: { available: false, hours: "" },
+              tuesday: { available: false, hours: "" },
+              wednesday: { available: false, hours: "" },
+              thursday: { available: false, hours: "" },
+              friday: { available: false, hours: "" },
+              saturday: { available: false, hours: "" },
+              sunday: { available: false, hours: "" },
+            },
+            bio: data.bio || "",
+          });
+
+          setExistingImages(data.storeImages || []);
+        } else if (res.status === 404) {
+          // No application found - stay in create mode
+          setIsEditMode(false);
+        }
+      } catch (err) {
+        console.error("Error fetching application:", err);
+      } finally {
+        setIsLoadingApplication(false);
+      }
+    };
+
+    fetchApplication();
+  }, [mechanic]);
 
   useEffect(() => {
     if (location.hash) {
@@ -57,33 +135,64 @@ const AddMechanicPage = () => {
   }, [location]);
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
+    }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handleServiceChange = (service) => {
+    setFormData((prev) => ({
+      ...prev,
+      servicesProvided: prev.servicesProvided.includes(service)
+        ? prev.servicesProvided.filter((s) => s !== service)
+        : [...prev.servicesProvided, service],
+    }));
+    setErrors((prev) => ({ ...prev, servicesProvided: "" }));
+  };
+
+  const handleAvailabilityChange = (day, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      availability: {
+        ...prev.availability,
+        [day]: {
+          ...prev.availability[day],
+          [field]: value,
+        },
+      },
     }));
   };
 
-  const handleSpecializationChange = (specialization) => {
-    setFormData((prev) => ({
-      ...prev,
-      specialization: prev.specialization.includes(specialization)
-        ? prev.specialization.filter((s) => s !== specialization)
-        : [...prev.specialization, specialization],
-    }));
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + existingImages.length > 3) {
+      setErrors((prev) => ({
+        ...prev,
+        storeImages: "Maximum 3 images allowed",
+      }));
+      return;
+    }
+    setStoreImages(files);
+    setErrors((prev) => ({ ...prev, storeImages: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
+    if (!formData.fullStoreName.trim())
+      newErrors.fullStoreName = "Store name is required";
     if (!formData.email.trim()) newErrors.email = "Email is required";
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
-    if (!formData.location.trim()) newErrors.location = "Location is required";
-    if (!formData.experience.trim())
-      newErrors.experience = "Experience is required";
-    if (formData.specialization.length === 0)
-      newErrors.specialization = "At least one specialization is required";
+    if (!formData.city.trim()) newErrors.city = "City is required";
+    if (!formData.experienceYears)
+      newErrors.experienceYears = "Experience is required";
+    if (!formData.vehicleSpecialization)
+      newErrors.vehicleSpecialization = "Vehicle specialization is required";
+    if (formData.servicesProvided.length === 0)
+      newErrors.servicesProvided = "At least one service is required";
     if (!formData.bio.trim()) newErrors.bio = "Bio is required";
 
     setErrors(newErrors);
@@ -94,14 +203,67 @@ const AddMechanicPage = () => {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
+    setApiError("");
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const formDataToSend = new FormData();
+
+      // Append all form fields
+      formDataToSend.append("fullStoreName", formData.fullStoreName);
+      formDataToSend.append("email", formData.email);
+      formDataToSend.append("phone", formData.phone);
+      formDataToSend.append("city", formData.city);
+      formDataToSend.append("experienceYears", formData.experienceYears);
+      formDataToSend.append("vehicleSpecialization", formData.vehicleSpecialization);
+      formDataToSend.append("servicesProvided", JSON.stringify(formData.servicesProvided));
+      formDataToSend.append("certifications", formData.certifications);
+      formDataToSend.append("availability", JSON.stringify(formData.availability));
+      formDataToSend.append("bio", formData.bio);
+
+      // Append new images
+      storeImages.forEach((file) => {
+        formDataToSend.append("storeImages", file);
+      });
+
+      const endpoint = isEditMode
+        ? "http://localhost:7777/api/mechanic-application"
+        : "http://localhost:7777/api/mechanic-application";
+
+      const method = isEditMode ? "PUT" : "POST";
+
+      const res = await fetch(endpoint, {
+        method,
+        credentials: "include",
+        body: formDataToSend,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to submit application");
+      }
+
       setIsSubmitted(true);
-    }, 2000);
+    } catch (err) {
+      setApiError(err.message || "Something went wrong");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // Loading state
+  if (isLoadingApplication) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="flex items-center text-gray-600">
+          <Loader2 className="animate-spin mr-2" size={24} />
+          <span>Loading application...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Success screen
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
@@ -110,47 +272,86 @@ const AddMechanicPage = () => {
             <CheckCircle size={40} className="text-white" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Application Submitted!
+            {isEditMode ? "Application Updated!" : "Application Submitted!"}
           </h2>
           <p className="text-gray-600 mb-6">
-            Thank you for applying to join OneTap. Your application has been
-            sent to our admin team for review.
+            {isEditMode
+              ? "Your application has been successfully updated."
+              : "Thank you for applying to join OneTap. Your application has been sent to our admin team for review."}
           </p>
           <div className="bg-blue-50 rounded-xl p-4 mb-6">
             <p className="text-blue-800 text-sm">
-              📧 You'll receive an email confirmation shortly
-              <br />
-              ⏱️ Review process takes 2-3 business days
-              <br />
-              📞 We'll contact you with updates
+              {isEditMode ? (
+                <>
+                  ✅ Changes saved successfully
+                  <br />
+                  📧 You'll receive an email confirmation
+                </>
+              ) : (
+                <>
+                  📧 You'll receive an email confirmation shortly
+                  <br />
+                  ⏱️ Review process takes 2-3 business days
+                  <br />
+                  📞 We'll contact you with updates
+                </>
+              )}
             </p>
           </div>
           <button
             onClick={() => {
               setIsSubmitted(false);
-              setFormData({
-                fullName: "",
-                email: "",
-                phone: "",
-                location: "",
-                experience: "",
-                specialization: [],
-                certifications: "",
-                workingHours: "",
-                emergencyAvailable: false,
-                bio: "",
-                previousWork: "",
-                references: "",
-              });
+              if (!isEditMode) {
+                window.location.reload();
+              }
             }}
             className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300"
           >
-            Submit Another Application
+            {isEditMode ? "View Application" : "Return to Dashboard"}
           </button>
         </div>
       </div>
     );
   }
+
+  // Show application status banner if in edit mode
+  const renderStatusBanner = () => {
+    if (!isEditMode || !existingApplication) return null;
+
+    const statusColors = {
+      pending: "bg-yellow-50 border-yellow-300 text-yellow-800",
+      approved: "bg-green-50 border-green-300 text-green-800",
+      rejected: "bg-red-50 border-red-300 text-red-800",
+    };
+
+    const statusIcons = {
+      pending: Clock,
+      approved: CheckCircle,
+      rejected: AlertCircle,
+    };
+
+    const StatusIcon = statusIcons[existingApplication.status] || AlertCircle;
+    const colorClass = statusColors[existingApplication.status] || statusColors.pending;
+
+    return (
+      <div className={`${colorClass} border-2 rounded-3xl p-5 mb-6 flex items-start gap-3`}>
+        <StatusIcon className="flex-shrink-0 mt-0.5" size={24} />
+        <div className="flex-1">
+          <p className="font-semibold mb-1">
+            Application Status: {existingApplication.status?.toUpperCase()}
+          </p>
+          <p className="text-sm">
+            {existingApplication.status === "pending" &&
+              "Your application is under review. You can edit your details below."}
+            {existingApplication.status === "approved" &&
+              "Your application has been approved! You can update your details anytime."}
+            {existingApplication.status === "rejected" &&
+              "Your application was rejected. Please update your information and resubmit."}
+          </p>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -166,125 +367,145 @@ const AddMechanicPage = () => {
           <div className="relative z-10 max-w-6xl mx-auto px-4 py-16">
             <div className="text-center">
               <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Wrench size={40} />
+                {isEditMode ? <Edit2 size={40} /> : <Wrench size={40} />}
               </div>
-              <h1 className="text-5xl font-bold mb-6">Join Our Team</h1>
+              <h1 className="text-5xl font-bold mb-6">
+                {isEditMode ? "Edit Your Application" : "Join Our Team"}
+              </h1>
               <p className="text-xl mb-8 opacity-90 max-w-3xl mx-auto">
-                Become a certified OneTap mechanic and help revolutionize
-                automotive service. Apply today to join our network of skilled
-                professionals.
+                {isEditMode
+                  ? "Update your mechanic profile and service details"
+                  : "Become a certified OneTap mechanic and help revolutionize automotive service. Apply today to join our network of skilled professionals."}
               </p>
-              <div className="flex flex-wrap justify-center gap-8">
-                <div className="text-center">
-                  <div className="text-3xl font-bold">$75+</div>
-                  <div className="text-sm opacity-80">Per Hour</div>
+              {!isEditMode && (
+                <div className="flex flex-wrap justify-center gap-8">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">$75+</div>
+                    <div className="text-sm opacity-80">Per Hour</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">500+</div>
+                    <div className="text-sm opacity-80">Active Mechanics</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">24/7</div>
+                    <div className="text-sm opacity-80">Support</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">Flexible</div>
+                    <div className="text-sm opacity-80">Schedule</div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold">500+</div>
-                  <div className="text-sm opacity-80">Active Mechanics</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold">24/7</div>
-                  <div className="text-sm opacity-80">Support</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold">Flexible</div>
-                  <div className="text-sm opacity-80">Schedule</div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Benefits Section */}
-        <div className="max-w-6xl mx-auto px-4 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Why Work With OneTap?
-            </h2>
-            <p className="text-xl text-gray-600">
-              Join a team that values your skills and supports your growth
-            </p>
+        {/* Benefits Section (only show in create mode) */}
+        {!isEditMode && (
+          <div className="max-w-6xl mx-auto px-4 py-16">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                Why Work With OneTap?
+              </h2>
+              <p className="text-xl text-gray-600">
+                Join a team that values your skills and supports your growth
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 mb-16">
+              <div className="text-center group">
+                <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-3xl">💰</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  Competitive Pay
+                </h3>
+                <p className="text-gray-600">
+                  Earn $75+ per hour with performance bonuses and tips
+                </p>
+              </div>
+
+              <div className="text-center group">
+                <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Clock size={32} className="text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  Flexible Schedule
+                </h3>
+                <p className="text-gray-600">
+                  Choose your own hours and work when it suits you
+                </p>
+              </div>
+
+              <div className="text-center group">
+                <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Star size={32} className="text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  Career Growth
+                </h3>
+                <p className="text-gray-600">
+                  Continuous training and advancement opportunities
+                </p>
+                <div id="Mechanic-Form"></div>
+              </div>
+            </div>
           </div>
+        )}
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <span className="text-3xl">💰</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Competitive Pay
-              </h3>
-              <p className="text-gray-600">
-                Earn $75+ per hour with performance bonuses and tips
-              </p>
-            </div>
-
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Clock size={32} className="text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Flexible Schedule
-              </h3>
-              <p className="text-gray-600">
-                Choose your own hours and work when it suits you
-              </p>
-            </div>
-
-            <div className="text-center group">
-              <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Star size={32} className="text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Career Growth
-              </h3>
-              <p className="text-gray-600">
-                Continuous training and advancement opportunities
-              </p>
-              <div id="Mechanic-Form"></div>
-            </div>
-          </div>
-        </div>
         {/* Application Form */}
         <div className="max-w-4xl mx-auto px-4 pb-16">
           <div className="bg-white rounded-3xl shadow-2xl p-8">
             <div className="text-center mb-8">
               <Car size={48} className="mx-auto mb-4 text-red-600" />
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                Mechanic Application
+                {isEditMode ? "Edit Application" : "Mechanic Application"}
               </h2>
               <p className="text-gray-600">
-                Fill out the form below to join our team
+                {isEditMode
+                  ? "Update your details below"
+                  : "Fill out the form below to join our team"}
               </p>
             </div>
+
+            {renderStatusBanner()}
+
+            {apiError && (
+              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl flex items-center gap-3">
+                <AlertCircle className="text-red-500 shrink-0" size={20} />
+                <p className="text-red-700 text-sm font-medium">{apiError}</p>
+              </div>
+            )}
 
             <div className="space-y-6">
               {/* Personal Information */}
               <div className="bg-gray-50 rounded-2xl p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                   <User size={20} className="mr-2" />
-                  Personal Information
+                  Store Information
                 </h3>
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Full Name *
+                      Store Name *
                     </label>
                     <input
                       type="text"
-                      name="fullName"
-                      value={formData.fullName}
+                      name="fullStoreName"
+                      value={formData.fullStoreName}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                        errors.fullName ? "border-red-300" : "border-gray-200"
+                        errors.fullStoreName
+                          ? "border-red-300"
+                          : "border-gray-200"
                       }`}
-                      placeholder="Enter your full name"
+                      placeholder="Enter your store/garage name"
                     />
-                    {errors.fullName && (
+                    {errors.fullStoreName && (
                       <p className="text-red-500 text-sm mt-1">
-                        {errors.fullName}
+                        {errors.fullStoreName}
                       </p>
                     )}
                   </div>
@@ -322,7 +543,7 @@ const AddMechanicPage = () => {
                       className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
                         errors.phone ? "border-red-300" : "border-gray-200"
                       }`}
-                      placeholder="1234567890 (without country code)"
+                      placeholder="1234567890"
                     />
                     {errors.phone && (
                       <p className="text-red-500 text-sm mt-1">
@@ -333,21 +554,21 @@ const AddMechanicPage = () => {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Location/City *
+                      City *
                     </label>
                     <input
                       type="text"
-                      name="location"
-                      value={formData.location}
+                      name="city"
+                      value={formData.city}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                        errors.location ? "border-red-300" : "border-gray-200"
+                        errors.city ? "border-red-300" : "border-gray-200"
                       }`}
-                      placeholder="City, State"
+                      placeholder="e.g., Indore"
                     />
-                    {errors.location && (
+                    {errors.city && (
                       <p className="text-red-500 text-sm mt-1">
-                        {errors.location}
+                        {errors.city}
                       </p>
                     )}
                   </div>
@@ -362,55 +583,85 @@ const AddMechanicPage = () => {
                 </h3>
 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Years of Experience *
-                    </label>
-                    <select
-                      name="experience"
-                      value={formData.experience}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                        errors.experience ? "border-red-300" : "border-gray-200"
-                      }`}
-                    >
-                      <option value="">Select experience level</option>
-                      <option value="0-1">0-1 years</option>
-                      <option value="1-2">1-2 years</option>
-                      <option value="3-5">3-5 years</option>
-                      <option value="6-10">6-10 years</option>
-                      <option value="10+">10+ years</option>
-                    </select>
-                    {errors.experience && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.experience}
-                      </p>
-                    )}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Years of Experience *
+                      </label>
+                      <input
+                        type="number"
+                        name="experienceYears"
+                        value={formData.experienceYears}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
+                          errors.experienceYears
+                            ? "border-red-300"
+                            : "border-gray-200"
+                        }`}
+                        placeholder="e.g., 5"
+                        min="0"
+                      />
+                      {errors.experienceYears && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.experienceYears}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Vehicle Specialization *
+                      </label>
+                      <select
+                        name="vehicleSpecialization"
+                        value={formData.vehicleSpecialization}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
+                          errors.vehicleSpecialization
+                            ? "border-red-300"
+                            : "border-gray-200"
+                        }`}
+                      >
+                        <option value="">Select vehicle type</option>
+                        {VEHICLE_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.vehicleSpecialization && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.vehicleSpecialization}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Specializations * (Select all that apply)
+                      Services Provided * (Select all that apply)
                     </label>
                     <div className="grid md:grid-cols-2 gap-2">
-                      {specializations.map((spec) => (
+                      {SERVICE_OPTIONS.map((service) => (
                         <label
-                          key={spec}
+                          key={service}
                           className="flex items-center p-2 rounded-lg hover:bg-white cursor-pointer"
                         >
                           <input
                             type="checkbox"
-                            checked={formData.specialization.includes(spec)}
-                            onChange={() => handleSpecializationChange(spec)}
+                            checked={formData.servicesProvided.includes(
+                              service
+                            )}
+                            onChange={() => handleServiceChange(service)}
                             className="mr-2 w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
                           />
-                          <span className="text-sm">{spec}</span>
+                          <span className="text-sm">{service}</span>
                         </label>
                       ))}
                     </div>
-                    {errors.specialization && (
+                    {errors.servicesProvided && (
                       <p className="text-red-500 text-sm mt-1">
-                        {errors.specialization}
+                        {errors.servicesProvided}
                       </p>
                     )}
                   </div>
@@ -429,99 +680,109 @@ const AddMechanicPage = () => {
                     />
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Preferred Working Hours
-                      </label>
-                      <select
-                        name="workingHours"
-                        value={formData.workingHours}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 transition-colors"
-                      >
-                        <option value="">Select preferred hours</option>
-                        <option value="morning">Morning (8 AM - 12 PM)</option>
-                        <option value="afternoon">
-                          Afternoon (12 PM - 6 PM)
-                        </option>
-                        <option value="evening">Evening (6 PM - 10 PM)</option>
-                        <option value="flexible">Flexible</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center pt-8">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          name="emergencyAvailable"
-                          checked={formData.emergencyAvailable}
-                          onChange={handleInputChange}
-                          className="mr-2 w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                        />
-                        <span className="text-sm font-semibold text-gray-700">
-                          Available for emergency calls
-                        </span>
-                      </label>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Store Images (Max 3)
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageChange}
+                      className="w-full text-sm"
+                    />
+                    {existingImages.length > 0 && (
+                      <div className="mt-2 flex gap-2 flex-wrap">
+                        {existingImages.map((img, idx) => (
+                          <img
+                            key={idx}
+                            src={img.url}
+                            alt={`Store ${idx + 1}`}
+                            className="w-20 h-20 object-cover rounded-lg"
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {errors.storeImages && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.storeImages}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Additional Information */}
+              {/* Availability */}
+              <div className="bg-gray-50 rounded-2xl p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                  <Calendar size={20} className="mr-2" />
+                  Weekly Availability
+                </h3>
+
+                <div className="space-y-3">
+                  {Object.keys(formData.availability).map((day) => (
+                    <div key={day} className="flex items-center gap-4">
+                      <label className="flex items-center min-w-[120px]">
+                        <input
+                          type="checkbox"
+                          checked={formData.availability[day].available}
+                          onChange={(e) =>
+                            handleAvailabilityChange(
+                              day,
+                              "available",
+                              e.target.checked
+                            )
+                          }
+                          className="mr-2 w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                        />
+                        <span className="text-sm font-semibold capitalize">
+                          {day}
+                        </span>
+                      </label>
+                      {formData.availability[day].available && (
+                        <input
+                          type="text"
+                          value={formData.availability[day].hours}
+                          onChange={(e) =>
+                            handleAvailabilityChange(
+                              day,
+                              "hours",
+                              e.target.value
+                            )
+                          }
+                          className="flex-1 px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm"
+                          placeholder="e.g., 9 AM - 6 PM"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bio */}
               <div className="bg-gray-50 rounded-2xl p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
                   <FileText size={20} className="mr-2" />
-                  Additional Information
+                  About You
                 </h3>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Professional Bio *
-                    </label>
-                    <textarea
-                      name="bio"
-                      value={formData.bio}
-                      onChange={handleInputChange}
-                      rows="4"
-                      className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
-                        errors.bio ? "border-red-300" : "border-gray-200"
-                      }`}
-                      placeholder="Tell us about yourself, your experience, and why you want to join OneTap..."
-                    />
-                    {errors.bio && (
-                      <p className="text-red-500 text-sm mt-1">{errors.bio}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Previous Work Experience
-                    </label>
-                    <textarea
-                      name="previousWork"
-                      value={formData.previousWork}
-                      onChange={handleInputChange}
-                      rows="3"
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 transition-colors"
-                      placeholder="Describe your previous automotive work experience..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      References
-                    </label>
-                    <textarea
-                      name="references"
-                      value={formData.references}
-                      onChange={handleInputChange}
-                      rows="3"
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 transition-colors"
-                      placeholder="Provide contact information for professional references..."
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Professional Bio *
+                  </label>
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleInputChange}
+                    rows="4"
+                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
+                      errors.bio ? "border-red-300" : "border-gray-200"
+                    }`}
+                    placeholder="Tell us about yourself, your experience, and why you want to join OneTap..."
+                  />
+                  {errors.bio && (
+                    <p className="text-red-500 text-sm mt-1">{errors.bio}</p>
+                  )}
                 </div>
               </div>
 
@@ -534,30 +795,28 @@ const AddMechanicPage = () => {
                 >
                   {isSubmitting ? (
                     <span className="flex items-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Submitting Application...
+                      <Loader2 className="animate-spin mr-2" size={20} />
+                      {isEditMode ? "Updating..." : "Submitting..."}
                     </span>
+                  ) : isEditMode ? (
+                    "Update Application"
                   ) : (
                     "Submit Application"
                   )}
                 </button>
 
-                <p className="text-sm text-gray-500 mt-4">
-                  By submitting this application, you agree to our{" "}
-                  <span
-                    onClick={() => setShowTerms(true)}
-                    className="text-red-600 hover:text-red-700 font-semibold cursor-pointer"
-                  >
-                    *terms and conditions
-                  </span>
-                  . All information will be kept confidential.
-                </p>
-
-                <div className="text-sm text-gray-500 mt-2">
-                  After submitting, you will receive an email confirmation and
-                  our team will review your application within 2-3 business
-                  days. If selected, we will contact you for the next steps.
-                </div>
+                {!isEditMode && (
+                  <p className="text-sm text-gray-500 mt-4">
+                    By submitting this application, you agree to our{" "}
+                    <span
+                      onClick={() => setShowTerms(true)}
+                      className="text-red-600 hover:text-red-700 font-semibold cursor-pointer"
+                    >
+                      *terms and conditions
+                    </span>
+                    . All information will be kept confidential.
+                  </p>
+                )}
               </div>
             </div>
           </div>

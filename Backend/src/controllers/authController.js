@@ -70,19 +70,12 @@ const registerUser = async (req, res) => {
         <p>This link expires in 24 hours.</p>
       `,
     });
-    const t = generateToken(newUser._id);
-    res
-      .status(201)
-      .cookie("token", t, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-      })
 
-      .json({
-        message: "Registration successful. Please verify your email.",
-      });
+    res.status(201).json({
+      message:
+        "Registration successful. Please verify your email before logging in.",
+      email: newUser.email,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
@@ -223,13 +216,12 @@ const forgotPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Generate 4-digit OTP
+    // 4-digit OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    
-    // Set OTP with 10 min expiry
+
     user.otpCode = otp;
     user.otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
-    
+
     await user.save();
 
     // Send OTP via email
@@ -261,34 +253,33 @@ const verifyOtpAndResetPassword = async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
   try {
-    const user = await User.findOne({ 
-      email, 
+    const user = await User.findOne({
+      email,
       otpCode: otp,
-      otpExpiry: { $gt: Date.now() }
+      otpExpiry: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({ 
-        message: "Invalid or expired OTP" 
+      return res.status(400).json({
+        message: "Invalid or expired OTP",
       });
     }
 
     user.otpCode = undefined;
     user.otpExpiry = undefined;
     user.password = newPassword;
-    
+
     await user.save();
 
-    res.json({ 
+    res.json({
       message: "Password reset successful",
-      success: true 
+      success: true,
     });
   } catch (error) {
     console.error("Reset password error:", error);
     res.status(500).json({ message: "Failed to reset password" });
   }
 };
-
 
 const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
@@ -322,5 +313,5 @@ module.exports = {
   verifyUserEmail,
   forgotPassword,
   resetPassword,
-  verifyOtpAndResetPassword
+  verifyOtpAndResetPassword,
 };

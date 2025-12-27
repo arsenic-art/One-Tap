@@ -15,31 +15,30 @@ exports.createBooking = async (req, res) => {
       vehicle,
       services: {
         main: booking.selectedServices,
-        additional: booking.additionalServices
+        additional: booking.additionalServices,
       },
       schedule: {
         preferredDate: booking.preferredDate,
         preferredTime: booking.preferredTime,
         alternateDate: booking.alternateDate,
         alternateTime: booking.alternateTime,
-        urgency: booking.urgency
+        urgency: booking.urgency,
       },
       problemDescription: booking.problemDescription,
       specialInstructions: booking.specialInstructions,
       pricing: {
         estimatedTotal,
-        finalTotal: estimatedTotal
+        finalTotal: estimatedTotal,
       },
       contactPreference: booking.contactPreference,
-      marketingConsent: booking.marketingConsent
+      marketingConsent: booking.marketingConsent,
     });
 
     return res.status(201).json({
       success: true,
       bookingId: newBooking._id,
-      estimatedTotal
+      estimatedTotal,
     });
-
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }

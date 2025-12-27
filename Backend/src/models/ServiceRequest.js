@@ -44,16 +44,40 @@ const serviceRequestSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected"],
+      enum: [
+        "pending",
+        "accepted",
+        "in-progress",
+        "completed",
+        "rejected",
+        "cancelled",
+      ],
       default: "pending",
     },
+
+    userLocation: {
+      address: String,
+      city: String,
+      coordinates: {
+        lat: Number,
+        lng: Number,
+      },
+    },
+
+    estimatedAmount: {
+      type: Number,
+      min: 0,
+    },
+
+    acceptedAt: Date,
+    startedAt: Date,
+    completedAt: Date,
+    rejectedAt: Date,
   },
   { timestamps: true }
 );
 
-serviceRequestSchema.index(
-  { userId: 1, mechanicId: 1, status: 1 },
-  { unique: true, partialFilterExpression: { status: "pending" } }
-);
-
+serviceRequestSchema.index({ userId: 1, mechanicId: 1 });
+serviceRequestSchema.index({ mechanicId: 1, status: 1 });
+serviceRequestSchema.index({ userId: 1, status: 1 });
 module.exports = mongoose.model("ServiceRequest", serviceRequestSchema);

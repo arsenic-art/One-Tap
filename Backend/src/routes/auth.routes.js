@@ -7,7 +7,8 @@ const {
   updateUserProfile,
   verifyUserEmail,
   forgotPassword,
-  verifyOtpAndResetPassword
+  verifyOtpAndResetPassword,
+  logoutUser
 } = require("../controllers/authController");
 const { userAuth } = require("../middlewares/auth.middleware");
 const upload = require("../middlewares/upload.middleware");
@@ -15,7 +16,7 @@ const upload = require("../middlewares/upload.middleware");
 router.post("/register", registerUser);
 router.get("/verify-email", verifyUserEmail);
 router.post("/login", loginUser);
-
+router.post("/logout", logoutUser);
 router
   .route("/profile")
   .get(userAuth, getUserProfile)

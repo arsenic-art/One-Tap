@@ -244,6 +244,17 @@ const mechanicResetPassword = async (req, res) => {
   }
 };
 
+const logoutMechanic = (req, res) => {
+  res.cookie("token", "", {
+    httpOnly: true,
+    expires: new Date(0),
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+
+  res.status(200).json({ message: "Mechanic logged out successfully" });
+};
+
 module.exports = {
   registerMechanic,
   loginMechanic,
@@ -252,4 +263,5 @@ module.exports = {
   verifyMechanicEmail,
   mechanicForgotPassword,
   mechanicResetPassword,
+  logoutMechanic,
 };

@@ -305,6 +305,17 @@ const resetPassword = async (req, res) => {
   res.json({ message: "Password reset successful" });
 };
 
+const logoutUser = (req, res) => {
+  res.cookie("token", "", {
+    httpOnly: true,
+    expires: new Date(0), 
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  
+  res.status(200).json({ message: "Logged out successfully" });
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -314,4 +325,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   verifyOtpAndResetPassword,
+  logoutUser
 };

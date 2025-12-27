@@ -1,21 +1,21 @@
-import { Car, Rocket } from "lucide-react";
+import { Car, Rocket, Target, ShieldCheck, HeartHandshake } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const AboutUsPage = () => {
   const teamMembers = [
     {
-      name: "Chandrakant Banait",
-      role: "CEO & Founder",
-      experience: "0+ years",
-      image: "👩‍💼",
-      bio: "Former automotive engineer turned entrepreneur, passionate about revolutionizing auto service delivery.",
+      name: "Piyush Sharma",
+      role: "Co-Founder & Tech Lead",
+      experience: "1+ years",
+      image: "👨‍💻",
+      bio: "Engineering student and full-stack developer responsible for building and scaling OneTap's technology platform.",
     },
     {
-      name: "Er. Piyush Sharma ",
-      role: "CEO & Founder",
-      experience: "0+ years",
-      image: "👨‍🔧",
-      bio: "Master mechanic with expertise in all vehicle types, ensuring quality service standards.",
+      name: "Chandrakant Banait",
+      role: "Co-Founder & Operations",
+      experience: "1+ years",
+      image: "👨‍💼",
+      bio: "Handles operations, mechanic onboarding, and service workflows to ensure smooth and reliable service delivery.",
     },
   ];
 
@@ -23,36 +23,36 @@ const AboutUsPage = () => {
 
   const values = [
     {
-      icon: "🎯",
+      icon: <Target size={28} />,
       title: "Excellence",
       description:
-        "We strive for perfection in every service we provide, never settling for 'good enough'.",
+        "We aim to deliver reliable, high-quality service without cutting corners.",
     },
     {
-      icon: "🤝",
+      icon: <ShieldCheck size={28} />,
       title: "Trust",
       description:
-        "Building lasting relationships through transparent communication and reliable service.",
+        "Clear communication and dependable service are at the core of everything we do.",
     },
     {
-      icon: <Rocket />,
+      icon: <Rocket size={28} />,
       title: "Innovation",
       description:
-        "Continuously improving our technology and processes to better serve our customers.",
+        "We use technology to make roadside assistance faster and simpler.",
     },
     {
-      icon: "💚",
+      icon: <HeartHandshake size={28} />,
       title: "Care",
       description:
-        "Treating every vehicle and customer with the attention and respect they deserve.",
+        "Every customer and every vehicle is treated with respect and attention.",
     },
   ];
 
   const stats = [
-    { number: "50K+", label: "Happy Customers" },
-    { number: "500+", label: "Certified Mechanics" },
+    { number: "0+", label: "Happy Customers" },
+    { number: "100+", label: "Certified Mechanics" },
     { number: "24/7", label: "Support Available" },
-    { number: "98%", label: "Success Rate" },
+    { number: "90%", label: "Success Rate" },
   ];
 
   return (
@@ -99,24 +99,21 @@ const AboutUsPage = () => {
               </h2>
               <div className="space-y-4 text-gray-700">
                 <p className="text-lg leading-relaxed">
-                  OneTap was born from a simple frustration: why should car
-                  troubles disrupt your entire day? Founded in 2019, we set out
-                  to bring professional automotive service directly to our
-                  customers, wherever they are.
+                  OneTap started with a simple question — why is getting
+                  roadside help still so slow and unreliable?
                 </p>
                 <p className="text-lg leading-relaxed">
-                  What started as a small team of passionate mechanics has grown
-                  into a nationwide network of certified professionals, all
-                  united by the mission to make car maintenance convenient,
-                  transparent, and stress-free.
+                  We’re building OneTap to connect vehicle owners with nearby
+                  mechanics quickly, without long calls, confusion, or
+                  guesswork.
                 </p>
                 <p className="text-lg leading-relaxed">
-                  Today, we're proud to serve over 50,000 customers across the
-                  country, backed by cutting-edge technology and a commitment to
-                  excellence that drives everything we do.
+                  The goal is simple: faster help for users and better
+                  opportunities for skilled mechanics.
                 </p>
               </div>
             </div>
+
             <div className="bg-gradient-to-br from-red-100 to-orange-100 rounded-3xl p-8">
               <div className="text-center">
                 <div className="flex justify-center mb-4">
@@ -126,9 +123,8 @@ const AboutUsPage = () => {
                   Our Mission
                 </h3>
                 <p className="text-gray-700 text-lg">
-                  To make quality automotive service accessible, convenient, and
-                  trustworthy for everyone, while empowering skilled mechanics
-                  to build successful careers.
+                  To make roadside assistance faster, simpler, and more reliable
+                  using technology.
                 </p>
               </div>
             </div>
@@ -286,10 +282,10 @@ const AboutUsPage = () => {
               <p className="text-red-600 font-medium">
                 Need emergency service? Call{" "}
                 <a
-                  href="tel:555-911-AUTO"
-                  className="font-bold hover:underline"
+                  href="tel:+91 xxxxx xxxxx"
+                  className="font-bold no-underline hover:underline"
                 >
-                  (555) 911-AUTO
+                  +91 xxxxx xxxxx
                 </a>
               </p>
             </div>

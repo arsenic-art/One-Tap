@@ -1,4 +1,3 @@
-// src/features/profile/ProfileEditPage.jsx
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -14,7 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
-import { useMechanicAuthStore } from "../../store/useAuthStore"; // ✅ Add this
+import { useMechanicAuthStore } from "../../store/useAuthStore"; 
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -23,7 +22,6 @@ const SPECIAL_CHAR_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
 const ProfileEditPage = () => {
   const navigate = useNavigate();
   
-  // ✅ Get both auth stores
   const {
     user,
     isCheckingAuth: userCheckingAuth,
@@ -57,7 +55,6 @@ const ProfileEditPage = () => {
     profileImage: "",
   });
 
-  // ✅ Combined auth state
   const currentUser = mechanic || user;
   const isCheckingAuth = userCheckingAuth || mechanicCheckingAuth;
 
@@ -199,7 +196,6 @@ const ProfileEditPage = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to update profile");
 
-      // ✅ Update correct store based on role
       if (currentUser.role === "mechanic") {
         mechanicLoginSuccess(data);
       } else {
@@ -301,7 +297,7 @@ const ProfileEditPage = () => {
                   {currentUser.email}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Email cannot be changed for now.
+                  Email cannot be changed.
                 </p>
               </div>
             </div>

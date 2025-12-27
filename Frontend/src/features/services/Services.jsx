@@ -475,9 +475,9 @@ const FindMechanicAndRequest = () => {
                 /300
               </div>
             </div>
-            <p className="text-[11px] text-gray-500 mt-1">
+            {/* <p className="text-[11px] text-gray-500 mt-1">
               This will be pre-filled when you send the request.
-            </p>
+            </p> */}
           </div>
 
           <div className="flex items-center justify-between mt-6">

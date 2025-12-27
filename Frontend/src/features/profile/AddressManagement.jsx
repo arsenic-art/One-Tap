@@ -138,12 +138,12 @@ const AddressManagement = () => {
 
   // Validation functions
   const validatePhone = (phone) => {
-    const phoneRegex = /^[6-9]\d{9}$/; // Indian mobile number format
+    const phoneRegex = /^[6-9]\d{9}$/;
     return phoneRegex.test(phone);
   };
 
   const validatePincode = (pincode) => {
-    const pincodeRegex = /^[1-9][0-9]{5}$/; // 6-digit Indian pincode
+    const pincodeRegex = /^[1-9][0-9]{5}$/;
     return pincodeRegex.test(pincode);
   };
 
@@ -255,7 +255,6 @@ const AddressManagement = () => {
 
   const handleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
-    // Clear error for this field when user starts typing
     if (formErrors[field]) {
       setFormErrors({ ...formErrors, [field]: "" });
     }
@@ -349,7 +348,7 @@ const AddressManagement = () => {
                     placeholder="Phone (10 digits) *"
                     value={formData.phone}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, ""); // Only digits
+                      const value = e.target.value.replace(/\D/g, "");
                       if (value.length <= 10) {
                         handleInputChange("phone", value);
                       }
@@ -459,7 +458,7 @@ const AddressManagement = () => {
                     placeholder="Pincode (6 digits) *"
                     value={formData.pincode}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, ""); // Only digits
+                      const value = e.target.value.replace(/\D/g, "");
                       if (value.length <= 6) {
                         handleInputChange("pincode", value);
                       }

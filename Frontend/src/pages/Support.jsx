@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   BadgeQuestionMark,
   CircleAlert,
@@ -7,111 +7,77 @@ import {
   MapPin,
   ShieldAlert,
   Star,
+  Phone,
+  MessageCircleMore,
+  Siren,
+  BookOpenText,
+  TicketPercent,
+  Wrench,
+  CreditCard,
 } from "lucide-react";
-import { Phone } from "lucide-react";
-import { MessageCircleMore } from "lucide-react";
-import { Siren } from "lucide-react";
-import { BookOpenText } from "lucide-react";
-import { TicketPercent } from "lucide-react";
-import { Wrench } from "lucide-react";
-import { CreditCard } from "lucide-react";
 
 const SupportPage = () => {
   const [activeTab, setActiveTab] = useState("faq");
   const [openFaq, setOpenFaq] = useState(null);
-  const [animatedElements, setAnimatedElements] = useState([]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setAnimatedElements((prev) => [...prev, entry.target.id]);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    const elements = document.querySelectorAll("[data-animate]");
-    elements.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, []);
 
   const faqData = [
     {
       category: "General",
       questions: [
         {
-          question: "How do I book a service?",
+          question: "How do I request a service?",
           answer:
-            "You can book a service through our mobile app, website, or by calling (555) 123-4567. Simply select your service, choose your location and preferred time, and we'll send a certified mechanic to you.",
+            "Open OneTap, choose the service you need, share your location, and nearby mechanics will be notified instantly.",
         },
         {
-          question: "What areas do you service?",
+          question: "Which areas does OneTap support?",
           answer:
-            "We currently service the greater metropolitan area within a 50-mile radius of downtown. You can check if we service your area by entering your zip code during booking.",
+            "We currently operate in selected cities. Availability depends on active mechanics near your location.",
         },
         {
-          question: "Are your mechanics certified?",
+          question: "Are mechanics verified?",
           answer:
-            "Yes, all our mechanics are ASE certified and undergo rigorous background checks. They carry professional liability insurance and are equipped with the latest diagnostic tools.",
+            "Yes. Mechanics are onboarded after basic verification and review checks to ensure reliable service.",
         },
         {
-          question: "What if I need to cancel or reschedule?",
+          question: "Can I cancel a request?",
           answer:
-            "You can cancel or reschedule up to 2 hours before your appointment without any fees. Cancellations within 2 hours may incur a $25 fee.",
-        },
-      ],
-    },
-    {
-      category: "Pricing & Payment",
-      questions: [
-        {
-          question: "How much do your services cost?",
-          answer:
-            "Our pricing varies by service. We offer transparent, upfront pricing with no hidden fees. You'll see the exact cost before booking, and we provide detailed estimates for any additional work needed.",
-        },
-        {
-          question: "What payment methods do you accept?",
-          answer:
-            "We accept all major credit cards, debit cards, PayPal, and cash. Payment is collected after service completion through our secure payment system.",
-        },
-        {
-          question: "Do you offer warranties?",
-          answer:
-            "Yes! We offer a 12-month/12,000-mile warranty on parts and a 90-day warranty on labor. This covers any defects in workmanship or parts failure.",
-        },
-        {
-          question: "Are there any additional fees?",
-          answer:
-            "Our prices include all labor and basic supplies. The only additional costs might be parts (quoted upfront) or emergency service fees for calls between 10 PM and 6 AM.",
+            "Yes, you can cancel anytime before a mechanic accepts your request without any charges.",
         },
       ],
     },
     {
-      category: "Service Details",
+      category: "Pricing & Payments",
       questions: [
         {
-          question: "How long does a typical service take?",
+          question: "How is pricing decided?",
           answer:
-            "Most services take 30 minutes to 2 hours depending on complexity. We provide estimated timeframes for each service during booking, and our mechanic will update you on progress.",
+            "Prices depend on the service and issue. Final charges are discussed before work begins.",
         },
         {
-          question: "Do I need to be present during service?",
+          question: "What payment methods are supported?",
           answer:
-            "For most services, you don't need to be present. However, we recommend being available for diagnostics and to approve any additional work that may be needed.",
+            "You can pay using UPI, cards, or cash after the service is completed.",
         },
         {
-          question: "What if additional repairs are needed?",
+          question: "Are there hidden charges?",
           answer:
-            "Our mechanic will diagnose the issue and provide a detailed estimate for any additional work. We never perform unauthorized repairs - we always get your approval first.",
+            "No. Any extra work or parts are quoted and approved by you beforehand.",
+        },
+      ],
+    },
+    {
+      category: "Service & Support",
+      questions: [
+        {
+          question: "How long does it take for help to arrive?",
+          answer:
+            "Response time depends on mechanic availability and distance, but requests are sent instantly.",
         },
         {
-          question: "Do you provide parts or do I need to buy them?",
+          question: "What if the issue is bigger than expected?",
           answer:
-            "We provide all necessary parts and fluids. We use OEM or equivalent quality parts and can source specific brands upon request for an additional fee.",
+            "The mechanic will explain the situation and share options before proceeding.",
         },
       ],
     },
@@ -119,371 +85,247 @@ const SupportPage = () => {
 
   const contactMethods = [
     {
-      icon: <Phone />,
-      title: "Phone Support",
-      description: "Talk to our support team",
-      details: "6232706378",
-      availability: "24/7 Available",
+      icon: <Phone size={28} />,
+      title: "Call Support",
+      description: "Talk directly to our team",
+      details: "+91 xxxxx xxxxx",
+      availability: "Available 24/7",
       action: "Call Now",
     },
     {
-      icon: <MessageCircleMore />,
+      icon: <MessageCircleMore size={28} />,
       title: "Live Chat",
-      description: "Get instant help online",
-      details: "Average response: 2 min",
-      availability: "24/7 Available",
+      description: "Quick help through chat",
+      details: "Replies within minutes",
+      availability: "Available 24/7",
       action: "Start Chat",
     },
     {
-      icon: <Mail />,
-      title: "Email Support",
-      description: "Send us your questions",
-      details: "OneTap@gmail.com",
-      // details: "support@mechanicapp.com",
-      availability: "Response within 4 hours",
+      icon: <Mail size={28} />,
+      title: "Email Us",
+      description: "For non-urgent queries",
+      details: "onetapservicemail@gmail.com",
+      availability: "Reply within a few hours",
       action: "Send Email",
     },
     {
-      icon: <Siren />,
-      title: "Emergency Line",
-      description: "For roadside emergencies",
-      details: "6267031616",
-      availability: "24/7 Emergency",
-      action: "Emergency Call",
+      icon: <Siren size={28} />,
+      title: "Emergency Help",
+      description: "Immediate roadside assistance",
+      details: "+91 xxxxx xxxxx",
+      availability: "Emergency only",
+      action: "Call Emergency",
     },
   ];
 
   const supportResources = [
     {
-      icon: <BookOpenText />,
+      icon: <BookOpenText size={26} />,
       title: "Service History",
-      description: "View your past services and receipts",
-      link: "#",
+      description: "View your past service requests",
     },
     {
-      icon: <TicketPercent />,
-      title: "Appointment Manager",
-      description: "Reschedule or cancel appointments",
-      link: "#",
+      icon: <TicketPercent size={26} />,
+      title: "Manage Requests",
+      description: "Cancel or reschedule services",
     },
     {
-      icon: <Wrench />,
-      title: "Maintenance Reminders",
-      description: "Set up automatic service reminders",
-      link: "#",
+      icon: <Wrench size={26} />,
+      title: "Maintenance Tips",
+      description: "Basic care and reminders",
     },
     {
-      icon: <CreditCard />,
-      title: "Payment Methods",
+      icon: <CreditCard size={26} />,
+      title: "Payments",
       description: "Manage your payment options",
-      link: "#",
     },
     {
-      icon: <MapPin />,
-      title: "Service Areas",
-      description: "Check if we service your location",
-      link: "#",
+      icon: <MapPin size={26} />,
+      title: "Service Coverage",
+      description: "Check supported locations",
     },
     {
-      icon: <Star />,
-      title: "Leave Review",
-      description: "Share your experience with us",
-      link: "#",
+      icon: <Star size={26} />,
+      title: "Reviews",
+      description: "Rate your experience",
     },
   ];
 
   const troubleshootingSteps = [
     {
-      problem: "App Won't Load",
+      problem: "App not working properly",
       solutions: [
         "Check your internet connection",
-        "Clear app cache and data",
+        "Restart the app",
         "Update to the latest version",
-        "Restart your device",
+        "Try again after some time",
       ],
     },
     {
-      problem: "Booking Issues",
+      problem: "Unable to place a request",
       solutions: [
-        "Ensure your location is within service area",
-        "Check available time slots",
-        "Verify payment method is valid",
-        "Try booking through website",
+        "Make sure location access is enabled",
+        "Check if services are available in your area",
+        "Try again after refreshing",
       ],
     },
     {
-      problem: "Payment Problems",
+      problem: "Payment failed",
       solutions: [
-        "Check card expiration date",
-        "Verify billing address",
-        "Try a different payment method",
-        "Contact your bank",
+        "Retry with a different payment method",
+        "Check UPI or card details",
+        "Contact your bank if the issue continues",
       ],
     },
   ];
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        {/* Hero Section */}
-        <div className="relative bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white py-20 overflow-hidden">
-          <div className="absolute inset-0 bg-black/10"></div>
-          <div className="absolute top-0 left-0 w-full h-full">
-            <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-            <div className="absolute bottom-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-xl"></div>
-          </div>
-
-          <div className="relative max-w-7xl mx-auto px-6 text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 animate-fade-in">
-              How Can We Help?
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
-              Get the support you need, when you need it. We're here 24/7 to
-              help.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-white text-red-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-lg">
-                Get Help Now
-              </button>
-              <button className="border-2 border-white red px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-red-600 transition-all duration-300 hover:scale-105">
-                Emergency: 6264154947
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Contact Methods */}
-        <div className="py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                Contact Us
-              </h2>
-              <p className="text-xl text-gray-600">
-                Multiple ways to reach our support team
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {contactMethods.map((method, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 text-center group hover:-translate-y-2 border border-gray-100"
-                >
-                  <div className="flex justify-center mb-4">{method.icon}</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    {method.title}
-                  </h3>
-                  <p className="text-gray-600 mb-3">{method.description}</p>
-                  <div className="text-lg font-semibold text-red-600 mb-2">
-                    {method.details}
-                  </div>
-                  <div className="text-sm text-gray-500 mb-4">
-                    {method.availability}
-                  </div>
-                  <button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-2 rounded-full font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300 transform hover:scale-105">
-                    {method.action}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Support Tabs */}
-        <div className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex flex-wrap gap-4 justify-center mb-12">
-              {["faq", "resources", "troubleshooting"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-8 py-3 rounded-full font-semibold transition-all duration-300 ${
-                    activeTab === tab
-                      ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-lg"
-                      : "bg-white text-gray-700 hover:bg-gray-100 shadow-md"
-                  }`}
-                >
-                  {tab === "faq" && (
-                    <div className="flex gap-3 items-center">
-                      <BadgeQuestionMark
-                        color={activeTab === "faq" ? "white" : "red"}
-                      />
-                      FAQ
-                    </div>
-                  )}
-                  {tab === "resources" && (
-                    <div className="flex gap-3 items-center">
-                      <FolderOpen
-                        color={activeTab === "resources" ? "white" : "red"}
-                      />
-                      RESOURCES
-                    </div>
-                  )}
-                  {tab === "troubleshooting" && (
-                    <div className="flex gap-3 items-center">
-                      <Wrench
-                        color={
-                          activeTab === "troubleshooting" ? "white" : "red"
-                        }
-                      />
-                      TROUBLESHOOTING
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* FAQ Tab */}
-
-            {activeTab === "faq" && (
-              <div className="space-y-8">
-                {faqData.map((category, categoryIndex) => (
-                  <div
-                    key={categoryIndex}
-                    className="bg-white rounded-2xl shadow-lg overflow-hidden"
-                  >
-                    <div className="bg-gradient-to-r from-red-600 to-orange-500 text-white p-6">
-                      <h3 className="text-2xl font-bold">
-                        {category.category} Questions
-                      </h3>
-                    </div>
-                    <div className="divide-y divide-gray-200">
-                      {category.questions.map((faq, index) => (
-                        <div key={index} className="p-6">
-                          <button
-                            onClick={() =>
-                              setOpenFaq(
-                                openFaq === `${categoryIndex}-${index}`
-                                  ? null
-                                  : `${categoryIndex}-${index}`
-                              )
-                            }
-                            className="w-full flex justify-between items-center text-left hover:text-red-600 transition-colors duration-300"
-                          >
-                            <span className="text-lg font-semibold">
-                              {faq.question}
-                            </span>
-                            <span
-                              className={`text-2xl transition-transform duration-300 ${
-                                openFaq === `${categoryIndex}-${index}`
-                                  ? "rotate-180"
-                                  : ""
-                              }`}
-                            >
-                              ▼
-                            </span>
-                          </button>
-                          {openFaq === `${categoryIndex}-${index}` && (
-                            <div className="mt-4 text-gray-600 leading-relaxed animate-fade-in">
-                              {faq.answer}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Resources Tab */}
-            {activeTab === "resources" && (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {supportResources.map((resource, index) => (
-                  <div
-                    key={index}
-                    className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 group hover:-translate-y-2"
-                  >
-                    <div className="flex justify-center mb-4">
-                      {resource.icon}
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-red-600 transition-colors duration-300">
-                      {resource.title}
-                    </h3>
-                    <p className="text-gray-600 mb-4">{resource.description}</p>
-                    <button className="text-red-600 font-semibold hover:text-red-700 transition-colors duration-300">
-                      Access →
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Troubleshooting Tab */}
-            {activeTab === "troubleshooting" && (
-              <div className="space-y-6">
-                {troubleshootingSteps.map((issue, index) => (
-                  <div
-                    key={index}
-                    className="bg-white rounded-2xl shadow-lg p-8"
-                  >
-                    <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                      <span className="text-orange-500 mr-3">
-                        {" "}
-                        <CircleAlert size={28} />
-                      </span>
-                      {issue.problem}
-                    </h3>
-                    <div className="space-y-3">
-                      {issue.solutions.map((solution, solutionIndex) => (
-                        <div
-                          key={solutionIndex}
-                          className="flex items-start space-x-3"
-                        >
-                          <div className="bg-red-100 text-red-600 rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm mt-1">
-                            {solutionIndex + 1}
-                          </div>
-                          <div className="text-gray-700 text-lg">
-                            {solution}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Emergency CTA */}
-        <div className="bg-gradient-to-r from-red-600 to-orange-500 text-white py-16">
-          <div className="max-w-7xl mx-auto px-6 text-center">
-            <div className="flex justify-center  mb-6  ">
-              <ShieldAlert size={40} />
-            </div>
-            <h2 className="text-4xl font-bold mb-4">Emergency Support</h2>
-            <p className="text-xl mb-8 opacity-90">
-              Stranded? Need immediate help? Our emergency team is standing by
-              24/7.
-            </p>
-            <button className="bg-white text-red-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-lg text-lg">
-              Call Emergency Line: 6264154947
-            </button>
-          </div>
-        </div>
-
-        {/* Footer Support Info */}
-        <div className="bg-gray-900 text-white py-12">
-          <div className="max-w-7xl mx-auto px-6 text-center">
-            <h3 className="text-2xl font-bold mb-4">Still Need Help?</h3>
-            <p className="text-gray-300 mb-6">
-              Our support team is available 24/7 to assist you with any
-              questions or concerns.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105">
-                Live Chat Support
-              </button>
-              <button className="border-2 border-white text-white px-6 py-3 rounded-full font-semibold hover:bg-white hover:text-gray-900 transition-all duration-300 hover:scale-105">
-                Submit Support Ticket
-              </button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Hero */}
+      <div className="relative bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white py-20">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+            Need Help?
+          </h1>
+          <p className="text-xl md:text-2xl opacity-90">
+            We’re here to help you get back on the road quickly.
+          </p>
         </div>
       </div>
-    </>
+
+      {/* Contact Cards */}
+      <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {contactMethods.map((method, i) => (
+            <div
+              key={i}
+              className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all p-6 text-center border"
+            >
+              <div className="flex justify-center mb-4">
+                {method.icon}
+              </div>
+              <h3 className="text-xl font-bold mb-2">
+                {method.title}
+              </h3>
+              <p className="text-gray-600 mb-2">
+                {method.description}
+              </p>
+              <p className="text-red-600 font-semibold mb-1">
+                {method.details}
+              </p>
+              <p className="text-sm text-gray-500 mb-4">
+                {method.availability}
+              </p>
+              <button className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white py-2 rounded-full font-semibold hover:opacity-90">
+                {method.action}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="py-16 max-w-7xl mx-auto px-6">
+        <div className="flex justify-center gap-4 mb-12">
+          {["faq", "resources", "troubleshooting"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-8 py-3 rounded-full font-semibold transition ${
+                activeTab === tab
+                  ? "bg-gradient-to-r from-red-600 to-orange-500 text-white"
+                  : "bg-white border"
+              }`}
+            >
+              {tab.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {/* FAQ */}
+        {activeTab === "faq" &&
+          faqData.map((section, sIdx) => (
+            <div key={sIdx} className="mb-8 bg-white rounded-2xl shadow">
+              <div className="bg-gradient-to-r from-red-600 to-orange-500 text-white p-6 rounded-t-2xl">
+                <h3 className="text-2xl font-bold">
+                  {section.category}
+                </h3>
+              </div>
+              {section.questions.map((q, qIdx) => {
+                const id = `${sIdx}-${qIdx}`;
+                return (
+                  <div key={id} className="p-6 border-t">
+                    <button
+                      onClick={() =>
+                        setOpenFaq(openFaq === id ? null : id)
+                      }
+                      className="w-full text-left font-semibold"
+                    >
+                      {q.question}
+                    </button>
+                    {openFaq === id && (
+                      <p className="mt-3 text-gray-600">
+                        {q.answer}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+
+        {/* Resources */}
+        {activeTab === "resources" && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {supportResources.map((r, i) => (
+              <div
+                key={i}
+                className="bg-white p-6 rounded-2xl shadow hover:shadow-lg"
+              >
+                <div className="mb-4">{r.icon}</div>
+                <h3 className="font-bold text-lg">{r.title}</h3>
+                <p className="text-gray-600 text-sm">
+                  {r.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Troubleshooting */}
+        {activeTab === "troubleshooting" &&
+          troubleshootingSteps.map((t, i) => (
+            <div
+              key={i}
+              className="bg-white p-8 rounded-2xl shadow mb-6"
+            >
+              <h3 className="text-2xl font-bold flex items-center gap-3 mb-4">
+                <CircleAlert className="text-orange-500" />
+                {t.problem}
+              </h3>
+              <ul className="space-y-2 text-gray-700">
+                {t.solutions.map((s, idx) => (
+                  <li key={idx}>• {s}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+      </div>
+
+      {/* Emergency CTA */}
+      <div className="bg-gradient-to-r from-red-600 to-orange-500 text-white py-16 text-center">
+        <ShieldAlert size={40} className="mx-auto mb-4" />
+        <h2 className="text-4xl font-bold mb-4">
+          Emergency Support
+        </h2>
+        <p className="text-xl mb-8 opacity-90">
+          Immediate help when you need it most.
+        </p>
+        <button className="bg-white text-red-600 px-8 py-4 rounded-full font-semibold">
+          Call +91 xxxxx xxxxx
+        </button>
+      </div>
+    </div>
   );
 };
 

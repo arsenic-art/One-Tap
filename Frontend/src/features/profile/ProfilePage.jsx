@@ -1,4 +1,3 @@
-// src/features/profile/ProfilePage.jsx
 import { useEffect, useState } from "react";
 import {
   User as UserIcon,
@@ -14,12 +13,11 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
-import { useMechanicAuthStore } from "../../store/useAuthStore"; // ✅ Add this
+import { useMechanicAuthStore } from "../../store/useAuthStore";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  
-  // ✅ Get both auth stores
+
   const {
     user,
     isLoggedIn: userLoggedIn,
@@ -27,7 +25,7 @@ const ProfilePage = () => {
     checkAuth: checkUserAuth,
     logout: userLogout,
   } = useAuthStore();
-  
+
   const {
     mechanic,
     isLoggedIn: mechanicLoggedIn,
@@ -37,7 +35,6 @@ const ProfilePage = () => {
 
   const [error, setError] = useState("");
 
-  // ✅ Combined auth state
   const currentUser = mechanic || user;
   const isLoggedIn = mechanicLoggedIn || userLoggedIn;
   const isCheckingAuth = userCheckingAuth || mechanicCheckingAuth;
@@ -51,7 +48,7 @@ const ProfilePage = () => {
 
   const handleLogout = async () => {
     if (!currentUser) return;
-    
+
     const base =
       currentUser.role === "mechanic"
         ? "http://localhost:7777/api/mechanic/logout"
@@ -63,7 +60,6 @@ const ProfilePage = () => {
         credentials: "include",
       }).catch(() => {});
     } finally {
-      // ✅ Logout from both stores
       if (mechanicLoggedIn) mechanicLogout();
       if (userLoggedIn) userLogout();
       navigate("/login");
@@ -71,7 +67,8 @@ const ProfilePage = () => {
   };
 
   const fullName = currentUser
-    ? `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim() || "User"
+    ? `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim() ||
+      "User"
     : "User";
 
   const isLoading = isCheckingAuth || (!currentUser && isLoggedIn);

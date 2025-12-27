@@ -25,7 +25,7 @@ const HeroSection = () => {
 
   const benefits = [
     {
-      icon: "📍",
+      icon: "📌",
       title: "Live Location Detection",
       description: "We pinpoint your location to find nearby mechanics.",
       color: "from-blue-400 to-blue-500",
@@ -50,7 +50,7 @@ const HeroSection = () => {
     { number: "< 30", label: "Minutes Response", unit: "min" },
     { number: "Many", label: "Happy Customers", unit: "" },
     { number: "24/7", label: "Available", unit: "" },
-    { number: "92%", label: "Success Rate", unit: "%" },
+    { number: "90%", label: "Success Rate", unit: "%" },
   ];
 
   const quickSections = [
@@ -87,7 +87,7 @@ const HeroSection = () => {
     },
     {
       question: "Can I see mechanic ratings?",
-      answer: "Yes, browse verified mechanics with ratings and reviews.",
+      answer: "Not yet, but mechanics are all verified.",
     },
     {
       question: "What services are available?",
@@ -159,7 +159,7 @@ const HeroSection = () => {
                 }}
                 className="flex gap-2 border-2 border-blue-500 text-blue-600 px-10 py-4 rounded-2xl font-bold text-lg hover:bg-blue-500 hover:text-white transition-all duration-300 transform hover:scale-105"
               >
-                <Phone /> Call: +91 88896 09747
+                <Phone /> Call: +91 xxxxx xxxxx
               </button>
             </div>
 
@@ -227,13 +227,13 @@ const HeroSection = () => {
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 to="/services"
-                className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-8 py-3 rounded-xl font-bold hover:from-red-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105"
+                className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-8 py-3 rounded-xl font-bold hover:from-red-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 no-underline"
               >
                 📱 Book Emergency Service
               </Link>
               <button
                 onClick={() => {
-                  window.location.href = "tel:+918889609747";
+                  window.location.href = "tel:+91 xxxxx xxxxx";
                 }}
                 className="border-2 border-red-500 text-red-500 px-8 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all duration-300"
               >
@@ -284,11 +284,11 @@ const HeroSection = () => {
               </p>
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-white rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-orange-500">50K+</div>
+                  <div className="text-2xl font-bold text-orange-500">0+</div>
                   <div className="text-sm text-gray-600">Happy Customers</div>
                 </div>
                 <div className="bg-white rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-500">500+</div>
+                  <div className="text-2xl font-bold text-blue-500">100+</div>
                   <div className="text-sm text-gray-600">
                     Verified Mechanics
                   </div>
@@ -372,7 +372,7 @@ const HeroSection = () => {
             </button>
             <Link
               to="/browse"
-              className="flex gap-2 items-center border-2 border-white text-white px-8 py-4 rounded-xl font-bold bg-transparent hover:border-transparent hover:bg-gradient-to-r hover:from-red-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105"
+              className="flex gap-2 items-center border-2 border-white text-white px-8 py-4 rounded-xl font-bold bg-transparent hover:border-transparent hover:bg-gradient-to-r hover:from-red-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 no-underline"
             >
               <Users className="w-5 h-5" />
               Browse Mechanics

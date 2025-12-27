@@ -1,5 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Mail, Send, Lock, CheckCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Mail,
+  Send,
+  Lock,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const ForgotPasswordPage = () => {
@@ -11,11 +18,13 @@ const ForgotPasswordPage = () => {
   const [canResend, setCanResend] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
 
   const otpRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
   const navigate = useNavigate();
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
 
   useEffect(() => {
     let interval;
@@ -33,10 +42,15 @@ const ForgotPasswordPage = () => {
     return () => clearInterval(interval);
   }, [timer]);
 
+  const showMessage = (text, type = "error") => {
+    setMessage(text);
+    setMessageType(type);
+  };
+
   const sendOtp = async (e) => {
     e.preventDefault();
     if (!emailRegex.test(email)) {
-      setMessage("Please enter a valid email address");
+      showMessage("Please enter a valid email address", "error");
       return;
     }
 
@@ -59,9 +73,15 @@ const ForgotPasswordPage = () => {
       setStep(2);
       setTimer(60);
       setCanResend(false);
-      setMessage("OTP sent to your email! Check your inbox (and spam folder)");
+      showMessage(
+        "OTP sent to your email! Check your inbox and spam folder.",
+        "success"
+      );
     } catch (err) {
-      setMessage(err.message || "Failed to send OTP");
+      showMessage(
+        err.message || "Failed to send OTP. Please try again.",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
@@ -70,7 +90,7 @@ const ForgotPasswordPage = () => {
   const verifyOtp = async () => {
     const otpCode = otp.join("");
     if (otpCode.length !== 4) {
-      setMessage("Please enter full 4-digit OTP");
+      showMessage("Please enter the complete 4-digit OTP", "error");
       return;
     }
 
@@ -78,9 +98,9 @@ const ForgotPasswordPage = () => {
     setMessage("");
     try {
       setStep(3);
-      setMessage("Enter your new password below");
+      showMessage("OTP verified! Now set your new password.", "success");
     } catch (err) {
-      setMessage("Verification failed");
+      showMessage("Invalid OTP. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -88,8 +108,17 @@ const ForgotPasswordPage = () => {
 
   const resetPassword = async (e) => {
     e.preventDefault();
+
     if (newPassword.length < 6) {
-      setMessage("Password must be at least 6 characters");
+      showMessage("Password must be at least 6 characters long", "error");
+      return;
+    }
+
+    if (!specialCharRegex.test(newPassword)) {
+      showMessage(
+        "Password must contain at least one special character",
+        "error"
+      );
       return;
     }
 
@@ -111,10 +140,16 @@ const ForgotPasswordPage = () => {
 
       if (!res.ok) throw new Error(data.message);
 
-      setMessage("✅ Password reset successful! Redirecting to login...");
+      showMessage(
+        "Password reset successful! Redirecting to login...",
+        "success"
+      );
       setTimeout(() => navigate("/login"), 2500);
     } catch (err) {
-      setMessage(err.message || "Failed to reset password");
+      showMessage(
+        err.message || "Failed to reset password. Please try again.",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
@@ -153,8 +188,12 @@ const ForgotPasswordPage = () => {
       navigate("/login");
     } else {
       setStep(step - 1);
+      setMessage("");
     }
   };
+
+  const isPasswordValid =
+    newPassword.length >= 6 && specialCharRegex.test(newPassword);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
@@ -164,34 +203,43 @@ const ForgotPasswordPage = () => {
           <div className="text-center mb-8">
             {step === 1 && (
               <>
-                <div className="text-6xl mb-4">🔒</div>
+                <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Lock size={40} className="text-white" />
+                </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
                   Forgot Password?
                 </h2>
-                <p className="text-gray-600 text-lg">
-                  Enter your email to reset password
+                <p className="text-gray-600">
+                  Enter your email to receive a verification code
                 </p>
               </>
             )}
             {step === 2 && (
               <>
-                <div className="text-6xl mb-4">📧</div>
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail size={40} className="text-white" />
+                </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
                   Verify OTP
                 </h2>
                 <p className="text-gray-600">
-                  Check your email for 4-digit code sent to <br />
+                  We've sent a 4-digit code to
+                  <br />
                   <span className="font-semibold text-gray-900">{email}</span>
                 </p>
               </>
             )}
             {step === 3 && (
               <>
-                <div className="text-6xl mb-4">🔐</div>
+                <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle size={40} className="text-white" />
+                </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  New Password
+                  Set New Password
                 </h2>
-                <p className="text-gray-600">Create a strong new password</p>
+                <p className="text-gray-600">
+                  Create a strong and secure password
+                </p>
               </>
             )}
           </div>
@@ -199,17 +247,18 @@ const ForgotPasswordPage = () => {
           {/* Success/Error Message */}
           {message && (
             <div
-              className={`p-4 rounded-2xl mb-6 text-sm flex items-center gap-2 ${
-                message.includes("✅") || message.includes("success")
-                  ? "bg-green-50 border-2 border-green-200 text-green-800"
-                  : "bg-red-50 border-2 border-red-200 text-red-800"
+              className={`p-4 rounded-2xl mb-6 text-sm flex items-center gap-3 border-2 ${
+                messageType === "success"
+                  ? "bg-green-50 border-green-200 text-green-800"
+                  : "bg-red-50 border-red-200 text-red-800"
               }`}
             >
-              {message.includes("✅") && <CheckCircle size={20} />}
-              {message.includes("failed") && (
-                <Mail size={20} className="text-red-500" />
+              {messageType === "success" ? (
+                <CheckCircle size={20} className="flex-shrink-0" />
+              ) : (
+                <AlertCircle size={20} className="flex-shrink-0" />
               )}
-              <span>{message.replace("✅ ", "").replace("failed", "")}</span>
+              <span>{message}</span>
             </div>
           )}
 
@@ -217,16 +266,22 @@ const ForgotPasswordPage = () => {
           {step === 1 && (
             <form onSubmit={sendOtp} className="space-y-6">
               <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address
+                </label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Mail
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                    size={20}
+                  />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full pl-12 pr-4 py-4 border-2 rounded-2xl text-lg focus:ring-4 ring-red-500/20 focus:border-red-500 transition-all shadow-sm ${
-                      emailRegex.test(email)
-                        ? "border-green-300"
-                        : "border-gray-200"
+                    className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 ring-red-500/20 transition-all ${
+                      email && emailRegex.test(email)
+                        ? "border-green-400 bg-green-50/30"
+                        : "border-gray-200 focus:border-red-500"
                     }`}
                     placeholder="Enter your email"
                   />
@@ -234,19 +289,21 @@ const ForgotPasswordPage = () => {
               </div>
 
               <button
+                type="submit"
                 disabled={!emailRegex.test(email) || loading}
-                className={`w-full flex items-center justify-center gap-3 py-5 px-6 rounded-2xl font-bold text-lg shadow-xl transition-all duration-300 transform ${
-                  emailRegex.test(email) && !loading
-                    ? "bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 hover:scale-[1.02]"
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                }`}
+                className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-semibold bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-red-600 disabled:hover:to-orange-500"
               >
                 {loading ? (
-                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Sending...
+                  </>
                 ) : (
-                  <Send className="w-5 h-5" />
+                  <>
+                    <Send size={18} />
+                    Send Verification Code
+                  </>
                 )}
-                Send OTP
               </button>
             </form>
           )}
@@ -256,7 +313,7 @@ const ForgotPasswordPage = () => {
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-4 text-center">
-                  Enter 4-digit OTP from email
+                  Enter 4-Digit Verification Code
                 </label>
                 <div className="flex justify-center gap-3">
                   {otp.map((digit, index) => (
@@ -264,14 +321,15 @@ const ForgotPasswordPage = () => {
                       key={index}
                       ref={otpRefs[index]}
                       type="text"
+                      inputMode="numeric"
                       maxLength={1}
                       value={digit}
                       onChange={(e) => handleOtpChange(index, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                      className={`w-20 h-20 text-center text-3xl font-bold border-3 rounded-2xl focus:ring-4 ring-red-500/30 focus:border-red-500 shadow-lg transition-all ${
+                      className={`w-16 h-16 text-center text-2xl font-bold border-2 rounded-xl focus:outline-none focus:ring-4 ring-blue-500/30 transition-all ${
                         digit
-                          ? "border-green-400 bg-green-50"
-                          : "border-gray-300"
+                          ? "border-green-400 bg-green-50 text-green-700"
+                          : "border-gray-300 focus:border-blue-500"
                       }`}
                     />
                   ))}
@@ -279,21 +337,22 @@ const ForgotPasswordPage = () => {
               </div>
 
               {/* Timer/Resend */}
-              <div className="text-center py-4">
+              <div className="text-center">
                 {timer > 0 ? (
-                  <p className="text-lg">
-                    Expires in{" "}
-                    <span className="font-mono text-2xl text-red-600">
-                      {timer}
+                  <p className="text-sm text-gray-600">
+                    Code expires in{" "}
+                    <span className="font-mono font-bold text-red-600">
+                      {Math.floor(timer / 60)}:
+                      {String(timer % 60).padStart(2, "0")}
                     </span>
-                    s
                   </p>
                 ) : (
                   <button
                     onClick={handleResendOtp}
-                    className="text-red-600 hover:text-red-700 font-semibold text-lg px-4 py-2 rounded-xl border border-red-200 hover:bg-red-50 transition-all"
+                    disabled={!canResend}
+                    className="text-red-600 hover:text-red-700 font-semibold px-4 py-2 rounded-xl border-2 border-red-200 hover:bg-red-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Resend OTP
+                    Resend Code
                   </button>
                 )}
               </div>
@@ -301,18 +360,19 @@ const ForgotPasswordPage = () => {
               <button
                 onClick={verifyOtp}
                 disabled={otp.some((d) => !d) || loading}
-                className={`w-full flex items-center justify-center gap-3 py-5 px-6 rounded-2xl font-bold text-lg shadow-xl transition-all duration-300 transform ${
-                  otp.every((d) => d) && !loading
-                    ? "bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 hover:scale-[1.02]"
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                }`}
+                className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-semibold bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-red-600 disabled:hover:to-orange-500"
               >
                 {loading ? (
-                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Verifying...
+                  </>
                 ) : (
-                  <Mail className="w-5 h-5" />
+                  <>
+                    <CheckCircle size={18} />
+                    Verify & Continue
+                  </>
                 )}
-                Verify & Continue
               </button>
             </div>
           )}
@@ -321,60 +381,109 @@ const ForgotPasswordPage = () => {
           {step === 3 && (
             <form onSubmit={resetPassword} className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  New Password (min 6 chars + 1 special char)
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  New Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Lock
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                    size={20}
+                  />
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className={`w-full pl-12 pr-4 py-4 border-2 rounded-2xl text-lg focus:ring-4 ring-red-500/20 focus:border-red-500 transition-all shadow-sm ${
-                      newPassword.length >= 6
-                        ? "border-green-300"
-                        : "border-gray-200"
+                    className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 ring-red-500/20 transition-all ${
+                      newPassword && isPasswordValid
+                        ? "border-green-400 bg-green-50/30"
+                        : "border-gray-200 focus:border-red-500"
                     }`}
                     placeholder="Enter new password"
                   />
                 </div>
-                <div className="text-xs text-gray-500 mt-2">
-                  {newPassword.length >= 6
-                    ? "✓ Strong password"
-                    : "Min 6 chars + special char"}
+
+                {/* Password Requirements */}
+                <div className="mt-3 space-y-1">
+                  <div
+                    className={`flex items-center gap-2 text-xs ${
+                      newPassword.length >= 6
+                        ? "text-green-600"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                        newPassword.length >= 6 ? "bg-green-100" : "bg-gray-100"
+                      }`}
+                    >
+                      {newPassword.length >= 6 && <CheckCircle size={12} />}
+                    </div>
+                    <span>At least 6 characters</span>
+                  </div>
+                  <div
+                    className={`flex items-center gap-2 text-xs ${
+                      specialCharRegex.test(newPassword)
+                        ? "text-green-600"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                        specialCharRegex.test(newPassword)
+                          ? "bg-green-100"
+                          : "bg-gray-100"
+                      }`}
+                    >
+                      {specialCharRegex.test(newPassword) && (
+                        <CheckCircle size={12} />
+                      )}
+                    </div>
+                    <span>Contains special character (!@#$%^&*)</span>
+                  </div>
                 </div>
               </div>
 
               <button
                 type="submit"
-                disabled={newPassword.length < 6 || loading}
-                className={`w-full flex items-center justify-center gap-3 py-5 px-6 rounded-2xl font-bold text-lg shadow-xl transition-all duration-300 transform ${
-                  newPassword.length >= 6 && !loading
-                    ? "bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 hover:scale-[1.02]"
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                }`}
+                disabled={!isPasswordValid || loading}
+                className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-xl font-semibold bg-gradient-to-r from-red-600 to-orange-500 text-white hover:from-red-700 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-red-600 disabled:hover:to-orange-500"
               >
                 {loading ? (
-                  <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Resetting Password...
+                  </>
                 ) : (
-                  <CheckCircle className="w-5 h-5" />
+                  <>
+                    <CheckCircle size={18} />
+                    Reset Password
+                  </>
                 )}
-                Reset Password
               </button>
             </form>
           )}
 
           {/* Back Button */}
-          <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+          <div className="mt-8 pt-6 border-t border-gray-100">
             <button
               onClick={goBack}
-              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium text-lg transition-all duration-300 hover:underline"
+              className="w-full flex items-center justify-center gap-2 text-gray-600 hover:text-gray-900 font-semibold transition-all duration-300 py-2 px-4 rounded-xl hover:bg-gray-50"
             >
-              <ArrowLeft className="w-5 h-5" />
-              Back to Login
+              <ArrowLeft size={18} />
+              {step === 1 ? "Back to Login" : "Go Back"}
             </button>
           </div>
         </div>
+
+        <p className="text-center text-sm text-gray-500 mt-6">
+          Remember your password?{" "}
+          <button
+            onClick={() => navigate("/login")}
+            className="text-red-600 hover:text-red-700 font-semibold hover:underline"
+          >
+            Sign in instead
+          </button>
+        </p>
       </div>
     </div>
   );

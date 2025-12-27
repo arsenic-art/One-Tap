@@ -4,6 +4,7 @@ import Logo from "../../assets/OneTapLogo.png";
 import { getRandomAvatar } from "../../utils/getAvatar";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMechanicAuthStore } from "../../store/useAuthStore";
+import { LogOut } from "lucide-react";
 
 const navLinkClass = (isActive) =>
   `no-underline px-3 py-2 text-sm font-medium transition-all duration-300 relative group ${
@@ -21,32 +22,47 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Determine which auth is active
   const isLoggedIn = userLoggedIn || mechanicLoggedIn;
-  const currentUser = mechanic || user; // Mechanic takes precedence
+  const currentUser = mechanic || user;
   const isMechanic = currentUser?.role === "mechanic";
 
   const toggleMenu = useCallback(() => setMenuOpen((prev) => !prev), []);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
-  const handleLogout = useCallback(() => {
-    // Logout from both stores to be safe
-    if (mechanicLoggedIn) {
-      mechanicLogout();
+  const handleLogout = useCallback(async () => {
+    try {
+      const endpoint = isMechanic
+        ? "http://localhost:7777/api/mechanic/logout"
+        : "http://localhost:7777/api/user/logout";
+
+      // Call Backend to clear cookie
+      await fetch(endpoint, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout failed on server:", error);
+    } finally {
+      // Clear Client State (Zustand) regardless of server success
+      if (mechanicLoggedIn) mechanicLogout();
+      if (userLoggedIn) userLogout();
+
+      // Close menu and redirect
+      setMenuOpen(false);
+      navigate("/");
     }
-    if (userLoggedIn) {
-      userLogout();
-    }
-    navigate("/");
-    setMenuOpen(false);
-  }, [mechanicLoggedIn, userLoggedIn, mechanicLogout, userLogout, navigate]);
+  }, [
+    isMechanic,
+    mechanicLoggedIn,
+    userLoggedIn,
+    mechanicLogout,
+    userLogout,
+    navigate,
+  ]);
 
   const resolvedAvatar = useMemo(() => {
     const nameToUse = currentUser?.firstName || currentUser?.name || "Account";
-
     if (currentUser?.profileImage) return currentUser.profileImage;
-    if (currentUser?.avatarUrl) return currentUser.avatarUrl;
-
     return getRandomAvatar(nameToUse);
   }, [currentUser]);
 
@@ -68,9 +84,8 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* 2. DESKTOP NAVIGATION (Dynamic based on Role) */}
+          {/* 2. DESKTOP NAVIGATION */}
           <div className="hidden md:flex items-center space-x-2">
-            {/* --- CASE 1: NOT LOGGED IN --- */}
             {!isLoggedIn && (
               <>
                 <NavLink
@@ -98,7 +113,6 @@ const Navbar = () => {
               </>
             )}
 
-            {/* --- CASE 2: LOGGED IN AS USER --- */}
             {isLoggedIn && !isMechanic && (
               <>
                 <NavLink
@@ -125,7 +139,6 @@ const Navbar = () => {
               </>
             )}
 
-            {/* --- CASE 3: LOGGED IN AS MECHANIC --- */}
             {isLoggedIn && isMechanic && (
               <>
                 <NavLink
@@ -182,12 +195,12 @@ const Navbar = () => {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={() => navigate("/profile")}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full hover:bg-gray-100 transition-all duration-300"
+                    className="flex items-center gap-2 px-2 py-1 bg-gray-50 border border-gray-200 rounded-full hover:bg-gray-100 transition-all duration-300 pr-4"
                   >
                     <img
                       src={resolvedAvatar}
                       alt="avatar"
-                      className="w-7 h-7 rounded-full object-cover border border-white shadow-sm"
+                      className="w-8 h-8 rounded-full object-cover border border-white shadow-sm"
                     />
                     <span className="text-sm font-semibold text-gray-700">
                       {currentUser?.firstName || "Profile"}
@@ -195,9 +208,10 @@ const Navbar = () => {
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="text-xs font-bold text-gray-400 hover:text-red-600 uppercase tracking-widest transition-colors"
+                    title="Logout"
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
                   >
-                    Logout
+                    <LogOut size={20} />
                   </button>
                 </div>
               )}
@@ -290,7 +304,6 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              {/* Mechanic Mobile Links */}
               {isMechanic ? (
                 <>
                   <NavLink
@@ -323,7 +336,6 @@ const Navbar = () => {
                   </NavLink>
                 </>
               ) : (
-                /* User Mobile Links */
                 <>
                   <NavLink
                     to="/browse"
@@ -357,9 +369,9 @@ const Navbar = () => {
               </NavLink>
               <button
                 onClick={handleLogout}
-                className="w-full border border-gray-200 rounded-full py-2 mt-4 text-red-600 font-bold"
+                className="w-full border border-gray-200 rounded-full py-2 mt-4 text-red-600 font-bold flex items-center justify-center gap-2"
               >
-                Logout
+                <LogOut size={16} /> Logout
               </button>
             </>
           )}

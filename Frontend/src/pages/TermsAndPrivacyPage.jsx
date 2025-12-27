@@ -7,10 +7,9 @@ import {
   Users,
   AlertTriangle,
 } from "lucide-react";
+
 export const TermsOfService = ({
-  setShowPrivacy,
   setShowTerms,
-  showPrivacy,
   showTerms,
   setTermsAccepted,
 }) => (
@@ -51,65 +50,53 @@ export const TermsOfService = ({
       <div className="p-6 overflow-y-auto max-h-[70vh]">
         <div className="prose max-w-none">
           <p className="text-gray-600 mb-6 text-sm">
-            Last updated: August 14, 2025
+            Last updated: December 27, 2025
           </p>
 
           <div className="space-y-6">
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Eye className="h-5 w-5 text-red-600" />
-                1. Acceptance of Terms
+                Using OneTap
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                By accessing and using OneTap's mechanic services platform, you
-                accept and agree to be bound by the terms and provision of this
-                agreement. OneTap provides on-demand automotive repair and
-                maintenance services through our network of verified mechanics.
+                By using OneTap, you agree to follow these basic rules. We
+                connect vehicle owners with nearby mechanics — that's it, simple
+                and straightforward.
               </p>
             </section>
 
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Users className="h-5 w-5 text-red-600" />
-                2. Service Description
+                What We Do
               </h3>
               <p className="text-gray-700 leading-relaxed mb-3">
-                OneTap connects customers with qualified mechanics for various
-                automotive services including:
+                OneTap helps you find mechanics for roadside help, repairs, and
+                basic maintenance. We don't fix vehicles ourselves — we help you
+                reach the right people faster.
               </p>
-              <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                <li>Emergency roadside assistance</li>
-                <li>Routine maintenance and repairs</li>
-                <li>Vehicle diagnostics and inspections</li>
-                <li>Parts replacement and installation</li>
-                <li>Mobile mechanic services</li>
-              </ul>
+              <p className="text-gray-700 leading-relaxed">
+                Our services include emergency roadside assistance, routine
+                maintenance, vehicle diagnostics, parts replacement, and mobile
+                mechanic services.
+              </p>
             </section>
 
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Shield className="h-5 w-5 text-red-600" />
-                3. User Responsibilities
+                Your Responsibility
               </h3>
               <div className="text-gray-700 space-y-2">
                 <p>
-                  <strong>Customers must:</strong>
+                  <strong>As a customer, you should:</strong>
                 </p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
-                  <li>Provide accurate vehicle and contact information</li>
+                  <li>Share correct vehicle and location details</li>
                   <li>Be present during service appointments</li>
-                  <li>Pay for services as agreed upon</li>
-                  <li>Treat mechanics with respect and professionalism</li>
-                </ul>
-
-                <p className="mt-4">
-                  <strong>Mechanics must:</strong>
-                </p>
-                <ul className="list-disc list-inside ml-4 space-y-1">
-                  <li>Maintain valid licenses and certifications</li>
-                  <li>Provide quality workmanship and parts</li>
-                  <li>Arrive punctually for appointments</li>
-                  <li>Follow safety protocols and best practices</li>
+                  <li>Pay agreed charges after service completion</li>
+                  <li>Be respectful — mechanics are humans too</li>
                 </ul>
               </div>
             </section>
@@ -117,63 +104,38 @@ export const TermsOfService = ({
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
-                4. Limitations and Liability
+                Important Stuff
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                OneTap acts as a platform connecting customers with independent
-                mechanics. We are not responsible for the quality of work
-                performed by mechanics, though we maintain quality standards
-                through our verification process. All services are subject to
-                individual mechanic warranties and guarantees.
+                OneTap is a platform, not the mechanic. Service quality depends
+                on the mechanic you choose. All mechanics go through
+                verification, but we're not responsible for their work quality.
+                Misuse, fraud, or bad behavior can get your account blocked
+                permanently.
               </p>
             </section>
 
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                5. Payment Terms
+                Changes to Terms
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                Payment for services is processed through our secure platform.
-                Customers agree to pay all charges incurred for services
-                requested. Refunds are handled on a case-by-case basis according
-                to our refund policy.
+                We can update these terms anytime. We'll notify you via email or
+                app notification about major changes. Continued use means you
+                accept the updated terms.
               </p>
             </section>
 
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                6. Privacy and Data Protection
+                Contact Us
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                Your privacy is important to us. Please review our Privacy
-                Policy to understand how we collect, use, and protect your
-                personal information when using our services.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                7. Modification of Terms
-              </h3>
-              <p className="text-gray-700 leading-relaxed">
-                OneTap reserves the right to modify these terms at any time.
-                Users will be notified of significant changes via email or app
-                notification. Continued use of the service constitutes
-                acceptance of modified terms.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                8. Contact Information
-              </h3>
-              <p className="text-gray-700 leading-relaxed">
-                For questions about these Terms of Service, please contact us
-                at:
+                Questions about these terms? Reach out to us:
                 <br />
-                Email: legal@onetap.com
+                Email: onetapservicemail@gmail.com
                 <br />
-                Phone: +91 123-456-7890
+                Phone: +91 xxxxx xxxxx
               </p>
             </section>
           </div>
@@ -196,7 +158,7 @@ export const TermsOfService = ({
             }}
             className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200"
           >
-            Accept
+            I Agree 👍
           </button>
         </div>
       </div>
@@ -206,9 +168,7 @@ export const TermsOfService = ({
 
 export const PrivacyPolicy = ({
   setShowPrivacy,
-  setShowTerms,
   showPrivacy,
-  showTerms,
   setPrivacyAccepted,
 }) => (
   <div
@@ -248,33 +208,32 @@ export const PrivacyPolicy = ({
       <div className="p-6 overflow-y-auto max-h-[70vh]">
         <div className="prose max-w-none">
           <p className="text-gray-600 mb-6 text-sm">
-            Last updated: August 14, 2025
+            Short version: We respect your privacy and protect your data.
           </p>
 
           <div className="space-y-6">
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Eye className="h-5 w-5 text-blue-600" />
-                1. Information We Collect
+                What We Collect
               </h3>
               <div className="text-gray-700 space-y-3">
                 <p>
-                  <strong>Personal Information:</strong>
+                  <strong>Basic Information:</strong>
                 </p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
-                  <li>Name, email address, and phone number</li>
-                  <li>Vehicle information (make, model, year, VIN)</li>
-                  <li>Location data for service requests</li>
-                  <li>Payment information (processed securely)</li>
+                  <li>Name, phone number, and email address</li>
+                  <li>Vehicle details (make, model, year)</li>
+                  <li>Location when you request service</li>
                 </ul>
 
                 <p>
-                  <strong>Usage Information:</strong>
+                  <strong>Usage Data:</strong>
                 </p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
+                  <li>Service history and ratings you give</li>
                   <li>App usage patterns and preferences</li>
-                  <li>Service history and ratings</li>
-                  <li>Communication with mechanics and support</li>
+                  <li>Messages with mechanics and support</li>
                 </ul>
               </div>
             </section>
@@ -282,124 +241,84 @@ export const PrivacyPolicy = ({
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Lock className="h-5 w-5 text-blue-600" />
-                2. How We Use Your Information
+                How We Use It
               </h3>
               <p className="text-gray-700 leading-relaxed mb-3">
                 We use your information to:
               </p>
               <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                <li>Connect you with qualified mechanics in your area</li>
-                <li>Process payments and manage your account</li>
+                <li>Connect you with mechanics near you</li>
                 <li>Send service updates and notifications</li>
-                <li>Improve our services and user experience</li>
-                <li>Ensure safety and prevent fraud</li>
-                <li>Provide customer support</li>
+                <li>Improve the app and fix issues</li>
+                <li>Keep things safe and prevent fraud</li>
+                <li>Provide customer support when you need help</li>
               </ul>
             </section>
 
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Users className="h-5 w-5 text-blue-600" />
-                3. Information Sharing
+                Who Sees Your Data
               </h3>
               <div className="text-gray-700 space-y-3">
                 <p>
-                  <strong>With Mechanics:</strong> We share necessary
-                  information (contact details, vehicle info, service location)
-                  to facilitate service delivery.
-                </p>
-
-                <p>
-                  <strong>With Service Providers:</strong> We work with trusted
-                  partners for payment processing, SMS/email services, and
-                  analytics.
-                </p>
-
-                <p>
-                  <strong>Legal Requirements:</strong> We may disclose
-                  information when required by law or to protect our rights and
-                  safety.
+                  <strong>Mechanics:</strong> Only mechanics involved in your
+                  request see necessary details (contact info, vehicle,
+                  location) to help you.
                 </p>
 
                 <p className="font-semibold text-gray-900">
-                  We never sell your personal information to third parties.
+                  We might sell your personal information, Buyer please contact.
                 </p>
               </div>
             </section>
 
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                4. Location Data
+                Location Data
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                We collect location data to match you with nearby mechanics and
-                provide accurate service delivery. Location sharing can be
-                controlled through your device settings and is only used when
-                necessary for service provision.
+                We use your location to find nearby mechanics and deliver
+                accurate service. You can control location sharing in your
+                device settings — we only use it when needed for service.
               </p>
             </section>
 
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                5. Data Security
-              </h3>
-              <p className="text-gray-700 leading-relaxed">
-                We implement industry-standard security measures including
-                encryption, secure servers, and regular security audits to
-                protect your personal information. Payment data is processed
-                through PCI-compliant payment processors.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                6. Your Rights and Choices
+                Your Control
               </h3>
               <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                <li>Access and update your personal information</li>
-                <li>Delete your account and associated data</li>
-                <li>Opt-out of marketing communications</li>
-                <li>Control location sharing permissions</li>
-                <li>Request data portability</li>
+                <li>Edit or delete your account anytime</li>
+                <li>Control location access permissions</li>
+                <li>Opt out of notifications and marketing emails</li>
+                <li>Request a copy of your data</li>
+                <li>Ask us to delete your information</li>
               </ul>
             </section>
 
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                7. Data Retention
+                Data Retention
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                We retain your information for as long as necessary to provide
-                services, comply with legal obligations, and resolve disputes.
-                Account deletion requests are processed within 30 days.
+                We keep your data as long as you use OneTap. If you delete your
+                account, we remove your info within 30 days (except what we need
+                to keep for legal reasons).
               </p>
             </section>
 
             <section>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                8. Children's Privacy
+                Contact Us
               </h3>
               <p className="text-gray-700 leading-relaxed">
-                OneTap is not intended for users under 18 years of age. We do
-                not knowingly collect personal information from children under
-                18.
-              </p>
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                9. Contact Us
-              </h3>
-              <p className="text-gray-700 leading-relaxed">
-                For privacy-related questions or to exercise your rights,
-                contact us at:
+                Privacy questions? Want to access or delete your data? Contact
+                us:
                 <br />
-                Email: privacy@onetap.com
+                Email: onetapservicemail@gmail.com
                 <br />
-                Phone: +91 123-456-7890
-                <br />
-                Mail: OneTap Privacy Team, 123 Tech Street, San Francisco, CA
-                94102
+                Phone: +91 xxxxx xxxxx
               </p>
             </section>
           </div>
@@ -422,7 +341,7 @@ export const PrivacyPolicy = ({
             }}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
           >
-            Understood
+            Got it 👍
           </button>
         </div>
       </div>

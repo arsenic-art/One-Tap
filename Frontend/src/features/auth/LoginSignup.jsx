@@ -3,13 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
 import { TermsOfService, PrivacyPolicy } from "../../pages/TermsAndPrivacyPage";
 import { useAuthStore } from "../../store/useAuthStore";
+import { useMechanicAuthStore } from "../../store/useAuthStore";
 
-const API_BASE = "http://localhost:7777/api/";
+const API_BASE = "http://localhost:7777/api";
 
 const AuthPage = ({ signUp }) => {
   const [isLogin, setIsLogin] = useState(Boolean(signUp));
   const navigate = useNavigate();
-  const loginSuccess = useAuthStore((s) => s.loginSuccess);
+
+  const userLoginSuccess = useAuthStore((s) => s.loginSuccess);
+  const mechanicLoginSuccess = useMechanicAuthStore((s) => s.loginSuccess);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -122,14 +125,16 @@ const AuthPage = ({ signUp }) => {
     setApiSuccess("");
 
     try {
-      const currentBase = isUser
-        ? "http://localhost:7777/api/user"
-        : "http://localhost:7777/api/mechanic";
+      const currentBase = isUser ? `${API_BASE}/user` : `${API_BASE}/mechanic`;
 
       const endpoint = isLogin ? "/login" : "/register";
 
       const payload = isLogin
-        ? { email: formData.email, password: formData.password }
+        ? {
+            email: formData.email,
+            password: formData.password,
+            rememberMe: formData.rememberMe,
+          }
         : {
             firstName: formData.firstName,
             lastName: formData.lastName,
@@ -153,13 +158,11 @@ const AuthPage = ({ signUp }) => {
         return;
       }
 
-      // Handle REGISTRATION success
       if (!isLogin) {
         setApiSuccess(
           "Registration successful! Please check your email to verify your account before logging in."
         );
 
-        // Clear form
         setFormData({
           email: "",
           password: "",
@@ -173,7 +176,6 @@ const AuthPage = ({ signUp }) => {
         setTermsAccepted(false);
         setPrivacyAccepted(false);
 
-        // Switch to login mode after 3 seconds
         setTimeout(() => {
           setIsLogin(true);
           setApiSuccess("");
@@ -181,14 +183,15 @@ const AuthPage = ({ signUp }) => {
         return;
       }
 
-      loginSuccess(data);
-
       if (data.role === "mechanic") {
+        mechanicLoginSuccess(data);
         navigate("/dashboard");
       } else {
+        userLoginSuccess(data);
         navigate("/services");
       }
     } catch (err) {
+      console.error(err);
       setApiError("Connection failed. Please try again.");
     } finally {
       setLoading(false);

@@ -10,10 +10,11 @@ import {
   Save,
   Lock,
   CheckCircle,
+  Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
-import { useMechanicAuthStore } from "../../store/useAuthStore"; 
+import { useMechanicAuthStore } from "../../store/useAuthStore";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -21,14 +22,14 @@ const SPECIAL_CHAR_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
 
 const ProfileEditPage = () => {
   const navigate = useNavigate();
-  
+
   const {
     user,
     isCheckingAuth: userCheckingAuth,
     checkAuth: checkUserAuth,
     loginSuccess: userLoginSuccess,
   } = useAuthStore();
-  
+
   const {
     mechanic,
     isCheckingAuth: mechanicCheckingAuth,
@@ -43,6 +44,7 @@ const ProfileEditPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [selectedFile, setSelectedFile] = useState(null);
+  const [deleteImage, setDeleteImage] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -128,7 +130,6 @@ const ProfileEditPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // basic validation on select
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       setFieldErrors((prev) => ({
         ...prev,
@@ -148,12 +149,19 @@ const ProfileEditPage = () => {
 
     setFieldErrors((prev) => ({ ...prev, profileImage: "" }));
     setSelectedFile(file);
+    setDeleteImage(false);
 
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreviewSrc(reader.result || "");
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleDeleteImage = () => {
+    setSelectedFile(null);
+    setPreviewSrc("");
+    setDeleteImage(true);
   };
 
   const handleSubmit = async (e) => {
@@ -170,11 +178,15 @@ const ProfileEditPage = () => {
     formData.append("firstName", firstName.trim());
     formData.append("lastName", lastName.trim());
     formData.append("phoneNumber", phoneNumber.trim());
+
     if (password) {
       formData.append("password", password);
     }
+
     if (selectedFile) {
       formData.append("profileImage", selectedFile);
+    } else if (deleteImage) {
+      formData.append("deleteProfileImage", "true");
     }
 
     setIsSubmitting(true);
@@ -201,10 +213,12 @@ const ProfileEditPage = () => {
       } else {
         userLoginSuccess(data);
       }
-      
+
       setPreviewSrc(data.profileImage || "");
       setPassword("");
       setConfirmPassword("");
+      setSelectedFile(null);
+      setDeleteImage(false);
       setSuccess("Profile updated successfully.");
     } catch (err) {
       setError(err.message || "Something went wrong");
@@ -247,7 +261,8 @@ const ProfileEditPage = () => {
   }
 
   const fullName =
-    `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim() || "User";
+    `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim() ||
+    "User";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -279,7 +294,7 @@ const ProfileEditPage = () => {
           {/* Avatar + basic info */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-gray-400 text-3xl">
+              <div className="w-20 h-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-gray-400 text-3xl relative group">
                 {previewSrc ? (
                   <img
                     src={previewSrc}
@@ -289,7 +304,22 @@ const ProfileEditPage = () => {
                 ) : (
                   <UserIcon size={32} />
                 )}
+
+                {/* Image Overlay with Delete Button */}
+                {previewSrc && (
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={handleDeleteImage}
+                      className="bg-white p-1.5 rounded-full text-red-600 hover:bg-red-50 transition-colors"
+                      title="Remove photo"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
+
               <div>
                 <p className="text-lg font-bold text-gray-900">{fullName}</p>
                 <p className="text-sm text-gray-600 flex items-center">
@@ -301,10 +331,22 @@ const ProfileEditPage = () => {
                 </p>
               </div>
             </div>
-            <p className="flex items-center text-xs text-gray-600">
-              <ImageIcon size={14} className="mr-1" />
-              Choose an image file to update your avatar.
-            </p>
+
+            <div className="flex flex-col items-end gap-1">
+              <p className="flex items-center text-xs text-gray-600">
+                <ImageIcon size={14} className="mr-1" />
+                Update profile picture
+              </p>
+              {previewSrc && (
+                <button
+                  type="button"
+                  onClick={handleDeleteImage}
+                  className="text-xs text-red-500 font-semibold hover:underline flex items-center"
+                >
+                  <Trash2 size={12} className="mr-1" /> Remove Photo
+                </button>
+              )}
+            </div>
           </div>
 
           {error && (

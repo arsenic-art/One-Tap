@@ -13,11 +13,16 @@ const submitApplication = async (req, res) => {
       return res.status(400).json({ message: "Application already submitted" });
     }
 
-    const storeImages =
-      req.files?.map((file) => ({
+    let storeImages = [];
+    const file =
+      req.file || (req.files && req.files.length > 0 ? req.files[0] : null);
+
+    if (file) {
+      storeImages.push({
         url: file.path,
         public_id: file.filename,
-      })) || [];
+      });
+    }
 
     const application = await MechanicApplication.create({
       mechanicID,
@@ -35,7 +40,7 @@ const submitApplication = async (req, res) => {
         ? JSON.parse(req.body.availability)
         : {},
       bio: req.body.bio,
-      storeImages,
+      storeImages, 
     });
 
     res.status(201).json({
@@ -48,7 +53,6 @@ const submitApplication = async (req, res) => {
   }
 };
 
-// Get current application
 const getMyApplication = async (req, res) => {
   try {
     const application = await MechanicApplication.findOne({
@@ -66,12 +70,9 @@ const getMyApplication = async (req, res) => {
   }
 };
 
-// Update existing application (Edit Profile)
 const updateApplication = async (req, res) => {
   try {
     const mechanicID = req.mechanic._id;
-
-    // Find the application
     let application = await MechanicApplication.findOne({ mechanicID });
 
     if (!application) {
@@ -91,20 +92,27 @@ const updateApplication = async (req, res) => {
       application.certifications = req.body.certifications;
     if (req.body.bio) application.bio = req.body.bio;
 
-    if (req.body.servicesProvided) {
+    if (req.body.servicesProvided)
       application.servicesProvided = JSON.parse(req.body.servicesProvided);
-    }
-    if (req.body.availability) {
+    if (req.body.availability)
       application.availability = JSON.parse(req.body.availability);
+
+    // Logic to delete existing image
+    if (req.body.deleteStoreImage === "true") {
+      application.storeImages = [];
     }
 
-    if (req.files && req.files.length > 0) {
-      const newImages = req.files.map((file) => ({
-        url: file.path,
-        public_id: file.filename,
-      }));
+    // Logic to replace with new single image
+    const file =
+      req.file || (req.files && req.files.length > 0 ? req.files[0] : null);
 
-      application.storeImages.push(...newImages);
+    if (file) {
+      application.storeImages = [
+        {
+          url: file.path,
+          public_id: file.filename,
+        },
+      ];
     }
 
     const updatedApplication = await application.save();

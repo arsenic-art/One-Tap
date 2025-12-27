@@ -175,19 +175,20 @@ const getUserProfile = async (req, res) => {
 const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (req.body.firstName) user.firstName = req.body.firstName;
+    if (req.body.lastName) user.lastName = req.body.lastName;
+    if (req.body.phoneNumber) user.phoneNumber = req.body.phoneNumber;
+    if (req.body.password) user.password = req.body.password;
+
+    if (req.body.deleteProfileImage === "true") {
+        user.profileImage = null;
     }
 
     if (req.file) {
       user.profileImage = req.file.path;
     }
-    if (req.body.firstName !== undefined) user.firstName = req.body.firstName;
-    if (req.body.lastName !== undefined) user.lastName = req.body.lastName;
-    if (req.body.phoneNumber !== undefined)
-      user.phoneNumber = req.body.phoneNumber;
-    if (req.body.password !== undefined) user.password = req.body.password;
 
     await user.save();
 
@@ -308,11 +309,11 @@ const resetPassword = async (req, res) => {
 const logoutUser = (req, res) => {
   res.cookie("token", "", {
     httpOnly: true,
-    expires: new Date(0), 
+    expires: new Date(0),  
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
   });
-  
+
   res.status(200).json({ message: "Logged out successfully" });
 };
 
@@ -325,5 +326,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   verifyOtpAndResetPassword,
-  logoutUser
+  logoutUser,
 };

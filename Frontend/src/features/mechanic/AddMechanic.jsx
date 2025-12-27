@@ -5,12 +5,13 @@ import {
   FileText,
   CheckCircle,
   Wrench,
-  Star,
   Clock,
   Loader2,
   AlertCircle,
   Edit2,
   Calendar,
+  X,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { MechanicApplicationTerms } from "./MechanicTerns";
@@ -32,7 +33,7 @@ const VEHICLE_OPTIONS = ["Car", "Bike", "Both"];
 
 const AddMechanicPage = () => {
   const { mechanic } = useMechanicAuthStore();
-  
+
   // Application state management
   const [existingApplication, setExistingApplication] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -79,9 +80,12 @@ const AddMechanicPage = () => {
       }
 
       try {
-        const res = await fetch("http://localhost:7777/api/mechanic-application/me", {
-          credentials: "include",
-        });
+        const res = await fetch(
+          "http://localhost:7777/api/mechanic-application/me",
+          {
+            credentials: "include",
+          }
+        );
 
         if (res.ok) {
           const data = await res.json();
@@ -167,16 +171,28 @@ const AddMechanicPage = () => {
   };
 
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length + existingImages.length > 3) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (existingImages.length > 0) {
       setErrors((prev) => ({
         ...prev,
-        storeImages: "Maximum 3 images allowed",
+        storeImages:
+          "Please remove the existing image before uploading a new one.",
       }));
       return;
     }
-    setStoreImages(files);
+
+    setStoreImages([file]);
     setErrors((prev) => ({ ...prev, storeImages: "" }));
+  };
+
+  const removeExistingImage = () => {
+    setExistingImages([]);
+  };
+
+  const removeNewImage = () => {
+    setStoreImages([]);
   };
 
   const validateForm = () => {
@@ -208,27 +224,37 @@ const AddMechanicPage = () => {
     try {
       const formDataToSend = new FormData();
 
-      // Append all form fields
       formDataToSend.append("fullStoreName", formData.fullStoreName);
       formDataToSend.append("email", formData.email);
       formDataToSend.append("phone", formData.phone);
       formDataToSend.append("city", formData.city);
       formDataToSend.append("experienceYears", formData.experienceYears);
-      formDataToSend.append("vehicleSpecialization", formData.vehicleSpecialization);
-      formDataToSend.append("servicesProvided", JSON.stringify(formData.servicesProvided));
+      formDataToSend.append(
+        "vehicleSpecialization",
+        formData.vehicleSpecialization
+      );
+      formDataToSend.append(
+        "servicesProvided",
+        JSON.stringify(formData.servicesProvided)
+      );
       formDataToSend.append("certifications", formData.certifications);
-      formDataToSend.append("availability", JSON.stringify(formData.availability));
+      formDataToSend.append(
+        "availability",
+        JSON.stringify(formData.availability)
+      );
       formDataToSend.append("bio", formData.bio);
 
-      // Append new images
-      storeImages.forEach((file) => {
-        formDataToSend.append("storeImages", file);
-      });
+      if (storeImages.length > 0) {
+        formDataToSend.append("storeImages", storeImages[0]);
+      }
 
-      const endpoint = isEditMode
-        ? "http://localhost:7777/api/mechanic-application"
-        : "http://localhost:7777/api/mechanic-application";
+      if (isEditMode) {
+        if (existingImages.length === 0) {
+          formDataToSend.append("deleteStoreImage", "true");
+        }
+      }
 
+      const endpoint = "http://localhost:7777/api/mechanic-application";
       const method = isEditMode ? "PUT" : "POST";
 
       const res = await fetch(endpoint, {
@@ -283,17 +309,15 @@ const AddMechanicPage = () => {
             <p className="text-blue-800 text-sm">
               {isEditMode ? (
                 <>
-                  ✅ Changes saved successfully
+                  Changes saved successfully
                   <br />
-                  📧 You'll receive an email confirmation
                 </>
               ) : (
                 <>
-                  📧 You'll receive an email confirmation shortly
                   <br />
-                  ⏱️ Review process takes 2-3 business days
+                  Review process takes 2-3 business days
                   <br />
-                  📞 We'll contact you with updates
+                  We'll contact you with updates
                 </>
               )}
             </p>
@@ -314,7 +338,6 @@ const AddMechanicPage = () => {
     );
   }
 
-  // Show application status banner if in edit mode
   const renderStatusBanner = () => {
     if (!isEditMode || !existingApplication) return null;
 
@@ -331,10 +354,13 @@ const AddMechanicPage = () => {
     };
 
     const StatusIcon = statusIcons[existingApplication.status] || AlertCircle;
-    const colorClass = statusColors[existingApplication.status] || statusColors.pending;
+    const colorClass =
+      statusColors[existingApplication.status] || statusColors.pending;
 
     return (
-      <div className={`${colorClass} border-2 rounded-3xl p-5 mb-6 flex items-start gap-3`}>
+      <div
+        className={`${colorClass} border-2 rounded-3xl p-5 mb-6 flex items-start gap-3`}
+      >
         <StatusIcon className="flex-shrink-0 mt-0.5" size={24} />
         <div className="flex-1">
           <p className="font-semibold mb-1">
@@ -377,85 +403,12 @@ const AddMechanicPage = () => {
                   ? "Update your mechanic profile and service details"
                   : "Become a certified OneTap mechanic and help revolutionize automotive service. Apply today to join our network of skilled professionals."}
               </p>
-              {!isEditMode && (
-                <div className="flex flex-wrap justify-center gap-8">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">$75+</div>
-                    <div className="text-sm opacity-80">Per Hour</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">500+</div>
-                    <div className="text-sm opacity-80">Active Mechanics</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">24/7</div>
-                    <div className="text-sm opacity-80">Support</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">Flexible</div>
-                    <div className="text-sm opacity-80">Schedule</div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Benefits Section (only show in create mode) */}
-        {!isEditMode && (
-          <div className="max-w-6xl mx-auto px-4 py-16">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                Why Work With OneTap?
-              </h2>
-              <p className="text-xl text-gray-600">
-                Join a team that values your skills and supports your growth
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8 mb-16">
-              <div className="text-center group">
-                <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-3xl">💰</span>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Competitive Pay
-                </h3>
-                <p className="text-gray-600">
-                  Earn $75+ per hour with performance bonuses and tips
-                </p>
-              </div>
-
-              <div className="text-center group">
-                <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Clock size={32} className="text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Flexible Schedule
-                </h3>
-                <p className="text-gray-600">
-                  Choose your own hours and work when it suits you
-                </p>
-              </div>
-
-              <div className="text-center group">
-                <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Star size={32} className="text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Career Growth
-                </h3>
-                <p className="text-gray-600">
-                  Continuous training and advancement opportunities
-                </p>
-                <div id="Mechanic-Form"></div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Application Form */}
-        <div className="max-w-4xl mx-auto px-4 pb-16">
+        <div className="max-w-4xl mx-auto px-4 pb-16 pt-8">
           <div className="bg-white rounded-3xl shadow-2xl p-8">
             <div className="text-center mb-8">
               <Car size={48} className="mx-auto mb-4 text-red-600" />
@@ -567,9 +520,7 @@ const AddMechanicPage = () => {
                       placeholder="e.g., Indore"
                     />
                     {errors.city && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.city}
-                      </p>
+                      <p className="text-red-500 text-sm mt-1">{errors.city}</p>
                     )}
                   </div>
                 </div>
@@ -680,35 +631,95 @@ const AddMechanicPage = () => {
                     />
                   </div>
 
+                  {/* -------------------- UPDATED IMAGE UPLOAD SECTION (SINGLE) -------------------- */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Store Images (Max 3)
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageChange}
-                      className="w-full text-sm"
-                    />
-                    {existingImages.length > 0 && (
-                      <div className="mt-2 flex gap-2 flex-wrap">
-                        {existingImages.map((img, idx) => (
-                          <img
-                            key={idx}
-                            src={img.url}
-                            alt={`Store ${idx + 1}`}
-                            className="w-20 h-20 object-cover rounded-lg"
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Store Image
+                      </label>
+                    </div>
+
+                    {/* Show Upload Box ONLY if no image exists and no new image is selected */}
+                    {existingImages.length === 0 &&
+                      storeImages.length === 0 && (
+                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="image-upload"
+                            className="hidden"
+                            onChange={handleImageChange}
                           />
-                        ))}
-                      </div>
-                    )}
+                          <label
+                            htmlFor="image-upload"
+                            className="cursor-pointer flex flex-col items-center"
+                          >
+                            <ImageIcon
+                              className="text-gray-400 mb-2"
+                              size={32}
+                            />
+                            <span className="text-sm text-gray-600 font-medium">
+                              Click to upload store image
+                            </span>
+                            <span className="text-xs text-gray-400 mt-1">
+                              PNG, JPG up to 10MB
+                            </span>
+                          </label>
+                        </div>
+                      )}
+
+                    {/* Image Preview Area */}
+                    <div className="mt-4">
+                      {/* Render Existing Image from DB */}
+                      {existingImages.length > 0 && (
+                        <div className="relative group w-full max-w-sm mx-auto">
+                          <img
+                            src={existingImages[0].url}
+                            alt="Store Front"
+                            className="w-full h-48 object-cover rounded-lg border border-gray-200 shadow-sm"
+                          />
+                          <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-bold">
+                            Current Image
+                          </div>
+                          <button
+                            onClick={removeExistingImage}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white p-2 rounded-full shadow-md hover:bg-red-600 transition-colors"
+                            type="button"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Render Newly Selected Image */}
+                      {storeImages.length > 0 && (
+                        <div className="relative group w-full max-w-sm mx-auto">
+                          <img
+                            src={URL.createObjectURL(storeImages[0])}
+                            alt="New Upload"
+                            className="w-full h-48 object-cover rounded-lg border border-green-200 ring-2 ring-green-100 shadow-sm"
+                          />
+                          <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                            New Upload
+                          </div>
+                          <button
+                            onClick={removeNewImage}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white p-2 rounded-full shadow-md hover:bg-red-600 transition-colors"
+                            type="button"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                     {errors.storeImages && (
-                      <p className="text-red-500 text-sm mt-1">
+                      <p className="text-red-500 text-sm mt-2 text-center">
                         {errors.storeImages}
                       </p>
                     )}
                   </div>
+                  {/* ----------------------------------------------------------- */}
                 </div>
               </div>
 

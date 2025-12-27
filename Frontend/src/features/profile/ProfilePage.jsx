@@ -46,22 +46,29 @@ const ProfilePage = () => {
     }
   }, [isCheckingAuth, currentUser, isLoggedIn, checkUserAuth]);
 
+  // ✅ FIXED LOGOUT FUNCTION
   const handleLogout = async () => {
-    if (!currentUser) return;
-
-    const base =
-      currentUser.role === "mechanic"
+    // Determine the correct logout endpoint based on role
+    const endpoint =
+      currentUser?.role === "mechanic"
         ? "http://localhost:7777/api/mechanic/logout"
         : "http://localhost:7777/api/user/logout";
 
     try {
-      await fetch(base, {
+      // 1. Tell server to clear HttpOnly cookie
+      await fetch(endpoint, {
         method: "POST",
         credentials: "include",
-      }).catch(() => {});
+      });
+    } catch (err) {
+      console.error("Logout error on server:", err);
+      // We ignore server errors and proceed to clear client state anyway
     } finally {
+      // 2. Clear Client State (Zustand)
       if (mechanicLoggedIn) mechanicLogout();
       if (userLoggedIn) userLogout();
+
+      // 3. Redirect to Login
       navigate("/login");
     }
   };

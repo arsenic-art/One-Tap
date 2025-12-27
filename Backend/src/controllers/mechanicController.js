@@ -144,16 +144,16 @@ const getMechanicProfile = async (req, res) => {
 const updateMechanicProfile = async (req, res) => {
   try {
     const mechanic = await Mechanic.findById(req.mechanic._id);
-    if (!mechanic) {
-      return res.status(404).json({ message: "Mechanic not found" });
-    }
+    if (!mechanic) return res.status(404).json({ message: "Mechanic not found" });
 
-    if (req.body.firstName !== undefined)
-      mechanic.firstName = req.body.firstName;
-    if (req.body.lastName !== undefined) mechanic.lastName = req.body.lastName;
-    if (req.body.phoneNumber !== undefined)
-      mechanic.phoneNumber = req.body.phoneNumber;
-    if (req.body.password !== undefined) mechanic.password = req.body.password;
+    if (req.body.firstName) mechanic.firstName = req.body.firstName;
+    if (req.body.lastName) mechanic.lastName = req.body.lastName;
+    if (req.body.phoneNumber) mechanic.phoneNumber = req.body.phoneNumber;
+    if (req.body.password) mechanic.password = req.body.password;
+
+    if (req.body.deleteProfileImage === "true") {
+        mechanic.profileImage = null;
+    }
 
     if (req.file) {
       mechanic.profileImage = req.file.path;
@@ -247,7 +247,7 @@ const mechanicResetPassword = async (req, res) => {
 const logoutMechanic = (req, res) => {
   res.cookie("token", "", {
     httpOnly: true,
-    expires: new Date(0),
+    expires: new Date(0),  
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
   });

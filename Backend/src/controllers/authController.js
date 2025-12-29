@@ -60,6 +60,12 @@ const registerUser = async (req, res) => {
 
     const verifyUrl = `${process.env.FRONTEND_URL}/api/user/verify-email?token=${token}`;
 
+    console.log("atThisStage");
+    res.status(201).json({
+      message:
+      "Registration successful. Please verify your email before logging in.",
+      email: newUser.email,
+    });
     await sendEmail({
       to: newUser.email,
       subject: "Verify your OneTap account",
@@ -70,12 +76,8 @@ const registerUser = async (req, res) => {
         <p>This link expires in 24 hours.</p>
       `,
     });
+    console.log("atThisStage2");
 
-    res.status(201).json({
-      message:
-        "Registration successful. Please verify your email before logging in.",
-      email: newUser.email,
-    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });

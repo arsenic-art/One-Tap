@@ -13,6 +13,7 @@ const bookingRoutes = require("./routes/bookingRoutes");
 const addressRoutes = require("./routes/addressRoutes");
 const mechanicDashboardRoutes = require("./routes/mechanicDashboardRoutes");
 
+app.set("trust proxy", 1);
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "http://localhost:5173",
@@ -24,6 +25,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.get("/", (req, res) => {
+  res.send("Welcome to the One Tap Mechanic Service API");
+});
 app.use("/api/user", userRoutes);
 app.use("/api/mechanic", mechanicRoutes);
 app.use("/api/mechanicdash", mechanicDashboardRoutes);

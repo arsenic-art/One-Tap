@@ -1,6 +1,5 @@
 const Mechanic = require("../models/Mechanic");
 const generateToken = require("../utils/generateToken");
-const cloudinary = require("cloudinary").v2;
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
 
@@ -100,8 +99,8 @@ const loginMechanic = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: true,
+      sameSite: "None",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 

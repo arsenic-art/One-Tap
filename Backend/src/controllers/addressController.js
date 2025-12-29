@@ -47,6 +47,12 @@ const addAddress = async (req, res) => {
       isDefault,
     } = req.body;
 
+    const addressCount = await UserSavedAddress.countDocuments({
+      userId: req.user._id,
+    });
+
+    if (addressCount === 0) isDefault = true;
+
     if (isDefault) {
       await UserSavedAddress.updateMany(
         { userId: req.user._id, isDefault: true },
@@ -72,6 +78,14 @@ const addAddress = async (req, res) => {
     });
   } catch (error) {
     console.error("addAddress error:", error);
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((val) => val.message);
+      return res.status(400).json({
+        message: "Invalid data",
+        errors: messages,
+      });
+    }
+
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -124,6 +138,14 @@ const updateAddress = async (req, res) => {
     });
   } catch (error) {
     console.error("updateAddress error:", error);
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((val) => val.message);
+      return res.status(400).json({
+        message: "Invalid data",
+        errors: messages,
+      });
+    }
+
     res.status(500).json({ message: "Server error" });
   }
 };

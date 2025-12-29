@@ -2,6 +2,7 @@ const ServiceRequest = require("../models/ServiceRequest");
 const Mechanic = require("../models/Mechanic");
 const MechanicApplication = require("../models/MechanicApplication");
 const Address = require("../models/SavedAddress");
+const { MAIN_SERVICES } = require("../constants/servicesCatalog");
 
 exports.createRequest = async (req, res) => {
   try {
@@ -31,6 +32,11 @@ exports.createRequest = async (req, res) => {
       userId: req.user._id,
       isDefault: true,
     });
+    if (!address) {
+      address = await Address.findOne({ userId: req.user._id }).sort({
+        createdAt: -1,
+      });
+    }
 
     if (!address) {
       return res
@@ -84,18 +90,8 @@ exports.createRequest = async (req, res) => {
 
 // Helper function for service pricing
 function getServicePrice(serviceType) {
-  const prices = {
-    "Emergency Roadside Assistance": 800,
-    "Mobile Oil Change": 500,
-    "Brake Inspection & Repair": 1200,
-    "Battery Replacement": 1500,
-    "Tire Services": 600,
-    "Engine Diagnostics": 1000,
-    "AC System Service": 1800,
-    "Pre-Purchase Inspection": 700,
-    "Preventive Maintenance": 900,
-  };
-  return prices[serviceType] || 500;
+  const service = MAIN_SERVICES.find((s) => s.title === serviceType);
+  return service ? service.price : 500;
 }
 
 exports.getMechanicRequests = async (req, res) => {

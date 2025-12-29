@@ -15,7 +15,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMechanicAuthStore } from "../../store/useAuthStore";
-
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api"
 const VEHICLE_OPTIONS = [
   { value: "", label: "Any Vehicle" },
   { value: "Car", label: "Car" },
@@ -86,7 +86,7 @@ const BrowseMechanics = () => {
       }
 
       try {
-        const res = await fetch("http://localhost:7777/api/address/default", {
+        const res = await fetch(`${API_BASE}/address/default`, {
           credentials: "include",
         });
 
@@ -124,7 +124,7 @@ const BrowseMechanics = () => {
 
     try {
       const qs = buildQueryString();
-      const res = await fetch(`http://localhost:7777/api/mechanicsList?${qs}`, {
+      const res = await fetch(`${API_BASE}/mechanicsList?${qs}`, {
         method: "GET",
         credentials: "include",
         headers: {

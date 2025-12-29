@@ -11,7 +11,7 @@ import {
   PlayCircle,
   XCircle,
 } from "lucide-react";
-
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api"
 const STATUS_STYLES = {
   pending: {
     text: "text-amber-700",
@@ -77,7 +77,7 @@ const UserServiceRequests = () => {
 
     try {
       const res = await fetch(
-        "http://localhost:7777/api/service-requests/requests/user",
+        `${API_BASE}/service-requests/requests/user`,
         {
           credentials: "include",
         }

@@ -30,7 +30,7 @@ const SERVICE_OPTIONS = [
 ];
 
 const VEHICLE_OPTIONS = ["Car", "Bike", "Both"];
-
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api"
 const AddMechanicPage = () => {
   const { mechanic } = useMechanicAuthStore();
 
@@ -81,7 +81,7 @@ const AddMechanicPage = () => {
 
       try {
         const res = await fetch(
-          "http://localhost:7777/api/mechanic-application/me",
+          `${API_BASE}/mechanic-application/me`,
           {
             credentials: "include",
           }
@@ -254,7 +254,7 @@ const AddMechanicPage = () => {
         }
       }
 
-      const endpoint = "http://localhost:7777/api/mechanic-application";
+      const endpoint = `${API_BASE}/mechanic-application`;
       const method = isEditMode ? "PUT" : "POST";
 
       const res = await fetch(endpoint, {

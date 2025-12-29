@@ -19,7 +19,7 @@ import { useMechanicAuthStore } from "../../store/useAuthStore";
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const SPECIAL_CHAR_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
-
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api"
 const ProfileEditPage = () => {
   const navigate = useNavigate();
 
@@ -196,8 +196,8 @@ const ProfileEditPage = () => {
 
       const base =
         currentUser.role === "mechanic"
-          ? "http://localhost:7777/api/mechanic/profile"
-          : "http://localhost:7777/api/user/profile";
+          ? `${API_BASE}/mechanic/profile`
+          : `${API_BASE}/user/profile`;
 
       const res = await fetch(base, {
         method: "PUT",

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api";
 export const useAuthStore = create(
   persist(
     (set) => ({
@@ -24,14 +24,23 @@ export const useAuthStore = create(
         });
       },
 
-      logout: () => {
-        set({ user: null, isLoggedIn: false, isCheckingAuth: false });
-        localStorage.removeItem("auth-storage");
+      logout: async () => {
+        try {
+          await fetch(`${API_BASE}/mechanic/logout`, {
+            method: "POST",
+            credentials: "include",
+          });
+        } catch (err) {
+          console.error("Logout API failed", err);
+        } finally {
+          set({ user: null, isLoggedIn: false, isCheckingAuth: false });
+          localStorage.removeItem("auth-storage");
+        }
       },
 
       checkAuth: async () => {
         try {
-          const res = await fetch("http://localhost:7777/api/user/profile", {
+          const res = await fetch(`${API_BASE}/user/profile`, {
             credentials: "include",
           });
           if (!res.ok) throw new Error("Unauthorized");
@@ -90,19 +99,25 @@ export const useMechanicAuthStore = create(
         });
       },
 
-      logout: () => {
-        set({ mechanic: null, isLoggedIn: false, isCheckingAuth: false });
-        localStorage.removeItem("mechanic-auth-storage");
+      logout: async () => {
+        try {
+          await fetch(`${API_BASE}/mechanic/logout`, {
+            method: "POST",
+            credentials: "include",
+          });
+        } catch (err) {
+          console.error("Mechanic logout API failed", err);
+        } finally {
+          set({ mechanic: null, isLoggedIn: false, isCheckingAuth: false });
+          localStorage.removeItem("mechanic-auth-storage");
+        }
       },
 
       checkAuth: async () => {
         try {
-          const res = await fetch(
-            "http://localhost:7777/api/mechanic/profile",
-            {
-              credentials: "include",
-            }
-          );
+          const res = await fetch(`${API_BASE}/mechanic/profile`, {
+            credentials: "include",
+          });
           if (!res.ok) throw new Error("Unauthorized");
 
           const mechanic = await res.json();

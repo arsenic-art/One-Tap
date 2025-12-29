@@ -50,7 +50,7 @@ const INDIAN_STATES = [
   "Lakshadweep",
   "Puducherry",
 ];
-
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api"
 const AddressManagement = () => {
   const navigate = useNavigate();
   const { user, isCheckingAuth, checkAuth } = useAuthStore();
@@ -82,7 +82,7 @@ const AddressManagement = () => {
   const fetchAddresses = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:7777/api/address", {
+      const res = await fetch(`${API_BASE}/address`, {
         credentials: "include",
       });
 
@@ -199,8 +199,8 @@ const AddressManagement = () => {
 
     try {
       const url = editingId
-        ? `http://localhost:7777/api/address/${editingId}`
-        : "http://localhost:7777/api/address";
+        ? `${API_BASE}/address/${editingId}`
+        : `${API_BASE}/address`;
 
       const res = await fetch(url, {
         method: editingId ? "PUT" : "POST",
@@ -222,7 +222,7 @@ const AddressManagement = () => {
     if (!confirm("Delete this address?")) return;
 
     try {
-      const res = await fetch(`http://localhost:7777/api/address/${id}`, {
+      const res = await fetch(`${API_BASE}/address/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -238,7 +238,7 @@ const AddressManagement = () => {
   const handleSetDefault = async (id) => {
     try {
       const res = await fetch(
-        `http://localhost:7777/api/address/${id}/set-default`,
+        `${API_BASE}/address/${id}/set-default`,
         {
           method: "PUT",
           credentials: "include",

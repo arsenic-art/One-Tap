@@ -10,7 +10,7 @@ const navLinkClass = (isActive) =>
   `no-underline px-3 py-2 text-sm font-medium transition-all duration-300 relative group ${
     isActive ? "text-red-600 font-semibold" : "text-gray-700 hover:text-red-600"
   }`;
-
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api";
 const Navbar = () => {
   const { isLoggedIn: userLoggedIn, user, logout: userLogout } = useAuthStore();
   const {
@@ -30,27 +30,11 @@ const Navbar = () => {
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   const handleLogout = useCallback(async () => {
-    try {
-      const endpoint = isMechanic
-        ? "http://localhost:7777/api/mechanic/logout"
-        : "http://localhost:7777/api/user/logout";
+    await mechanicLogout();
+    await userLogout();
 
-      // Call Backend to clear cookie
-      await fetch(endpoint, {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch (error) {
-      console.error("Logout failed on server:", error);
-    } finally {
-      // Clear Client State (Zustand) regardless of server success
-      if (mechanicLoggedIn) mechanicLogout();
-      if (userLoggedIn) userLogout();
-
-      // Close menu and redirect
-      setMenuOpen(false);
-      navigate("/");
-    }
+    setMenuOpen(false);
+    navigate("/");
   }, [
     isMechanic,
     mechanicLoggedIn,

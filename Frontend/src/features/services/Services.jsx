@@ -28,7 +28,7 @@ const SERVICE_TYPES = [
   "Pre-Purchase Inspection",
   "Preventive Maintenance",
 ];
-
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api"
 const DEFAULT_LIMIT = 10;
 
 const FindMechanicAndRequest = () => {
@@ -81,7 +81,7 @@ const FindMechanicAndRequest = () => {
 
     try {
       const qs = buildMechanicQueryString();
-      const res = await fetch(`http://localhost:7777/api/mechanicsList?${qs}`);
+      const res = await fetch(`${API_BASE}/mechanicsList?${qs}`);
       const json = await res.json();
 
       if (!res.ok) {
@@ -123,7 +123,7 @@ const FindMechanicAndRequest = () => {
   useEffect(() => {
     const checkAddress = async () => {
       try {
-        const res = await fetch("http://localhost:7777/api/address/default", {
+        const res = await fetch(`${API_BASE}/address/default`, {
           credentials: "include",
         });
 
@@ -261,7 +261,7 @@ const FindMechanicAndRequest = () => {
 
     try {
       const res = await fetch(
-        "http://localhost:7777/api/service-requests/requests",
+        `${API_BASE}/service-requests/requests`,
         {
           method: "POST",
           credentials: "include",

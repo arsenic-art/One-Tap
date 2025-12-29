@@ -13,7 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useMechanicAuthStore } from "../../store/useAuthStore";
 
-const API_BASE = "http://localhost:7777/api";
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api"
 
 const MechanicDashboard = () => {
   const navigate = useNavigate();

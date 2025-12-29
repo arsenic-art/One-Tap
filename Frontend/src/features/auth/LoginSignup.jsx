@@ -5,7 +5,9 @@ import { TermsOfService, PrivacyPolicy } from "../../pages/TermsAndPrivacyPage";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMechanicAuthStore } from "../../store/useAuthStore";
 
-const API_BASE = "http://localhost:7777/api";
+
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api";
+
 
 const AuthPage = ({ signUp }) => {
   const [isLogin, setIsLogin] = useState(Boolean(signUp));

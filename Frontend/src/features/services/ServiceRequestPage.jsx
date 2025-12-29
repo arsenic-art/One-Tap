@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 const VEHICLE_TYPES = ["Bike", "Car", "Both"];
-
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api"
 const SERVICE_TYPES = [
   "Emergency Roadside Assistance",
   "Mobile Oil Change",
@@ -57,7 +57,7 @@ const ServiceRequestPage = () => {
   useEffect(() => {
     const checkAddress = async () => {
       try {
-        const res = await fetch("http://localhost:7777/api/address/default", {
+        const res = await fetch(`${API_BASE}/address/default`, {
           credentials: "include",
         });
 
@@ -105,7 +105,7 @@ const ServiceRequestPage = () => {
 
     try {
       const res = await fetch(
-        "http://localhost:7777/api/service-requests/requests",
+        `${API_BASE}/service-requests/requests`,
         {
           method: "POST",
           credentials: "include",

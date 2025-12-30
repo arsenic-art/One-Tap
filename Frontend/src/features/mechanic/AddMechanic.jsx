@@ -30,11 +30,11 @@ const SERVICE_OPTIONS = [
 ];
 
 const VEHICLE_OPTIONS = ["Car", "Bike", "Both"];
-const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api"
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api";
+
 const AddMechanicPage = () => {
   const { mechanic } = useMechanicAuthStore();
 
-  // Application state management
   const [existingApplication, setExistingApplication] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoadingApplication, setIsLoadingApplication] = useState(true);
@@ -80,19 +80,15 @@ const AddMechanicPage = () => {
       }
 
       try {
-        const res = await fetch(
-          `${API_BASE}/mechanic-application/me`,
-          {
-            credentials: "include",
-          }
-        );
+        const res = await fetch(`${API_BASE}/mechanic-application/me`, {
+          credentials: "include",
+        });
 
         if (res.ok) {
           const data = await res.json();
           setExistingApplication(data);
           setIsEditMode(true);
 
-          // Prefill form data
           setFormData({
             fullStoreName: data.fullStoreName || "",
             email: data.email || "",
@@ -116,7 +112,6 @@ const AddMechanicPage = () => {
 
           setExistingImages(data.storeImages || []);
         } else if (res.status === 404) {
-          // No application found - stay in create mode
           setIsEditMode(false);
         }
       } catch (err) {
@@ -197,11 +192,27 @@ const AddMechanicPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[6-9]\d{9}$/;
 
-    if (!formData.fullStoreName.trim())
+    if (!formData.fullStoreName.trim()) {
       newErrors.fullStoreName = "Store name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+    } else if (formData.fullStoreName.length < 2) {
+      newErrors.fullStoreName = "Store name must be at least 2 characters";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!phoneRegex.test(formData.phone)) {
+      newErrors.phone = "Invalid phone number (10 digits starting with 6-9)";
+    }
+
     if (!formData.city.trim()) newErrors.city = "City is required";
     if (!formData.experienceYears)
       newErrors.experienceYears = "Experience is required";
@@ -209,7 +220,12 @@ const AddMechanicPage = () => {
       newErrors.vehicleSpecialization = "Vehicle specialization is required";
     if (formData.servicesProvided.length === 0)
       newErrors.servicesProvided = "At least one service is required";
-    if (!formData.bio.trim()) newErrors.bio = "Bio is required";
+
+    if (!formData.bio.trim()) {
+      newErrors.bio = "Bio is required";
+    } else if (formData.bio.length < 50) {
+      newErrors.bio = "Bio must be at least 50 characters long";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -220,6 +236,7 @@ const AddMechanicPage = () => {
 
     setIsSubmitting(true);
     setApiError("");
+    setErrors({});
 
     try {
       const formDataToSend = new FormData();
@@ -266,7 +283,13 @@ const AddMechanicPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to submit application");
+        if (data.errors) {
+          setErrors(data.errors);
+          setApiError("Please fix the highlighted errors.");
+        } else {
+          throw new Error(data.message || "Failed to submit application");
+        }
+        return;
       }
 
       setIsSubmitted(true);
@@ -631,7 +654,6 @@ const AddMechanicPage = () => {
                     />
                   </div>
 
-                  {/* -------------------- UPDATED IMAGE UPLOAD SECTION (SINGLE) -------------------- */}
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <label className="block text-sm font-semibold text-gray-700">

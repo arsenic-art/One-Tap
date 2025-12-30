@@ -50,7 +50,9 @@ const INDIAN_STATES = [
   "Lakshadweep",
   "Puducherry",
 ];
-const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api"
+
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api";
+
 const AddressManagement = () => {
   const navigate = useNavigate();
   const { user, isCheckingAuth, checkAuth } = useAuthStore();
@@ -106,7 +108,7 @@ const AddressManagement = () => {
 
   const resetForm = () => {
     setFormData({
-      fullName: user?.firstName + " " + user?.lastName || "",
+      fullName: user?.firstName + " " + (user?.lastName || "") || "",
       phone: user?.phoneNumber || "",
       email: user?.email || "",
       serviceLine: "",
@@ -136,7 +138,6 @@ const AddressManagement = () => {
     setFormErrors({});
   };
 
-  // Validation functions
   const validatePhone = (phone) => {
     const phoneRegex = /^[6-9]\d{9}$/;
     return phoneRegex.test(phone);
@@ -191,9 +192,10 @@ const AddressManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setFormErrors({});
 
     if (!validateForm()) {
-      setError("Please fix the errors before submitting");
+      setError("Please fix the highlighted errors before submitting");
       return;
     }
 
@@ -209,7 +211,17 @@ const AddressManagement = () => {
         body: JSON.stringify(formData),
       });
 
-      if (!res.ok) throw new Error("Failed to save address");
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.errors) {
+          setFormErrors(data.errors);
+          setError("Please fix the errors highlighted below");
+        } else {
+          throw new Error(data.message || "Failed to save address");
+        }
+        return;
+      }
 
       await fetchAddresses();
       resetForm();
@@ -237,13 +249,10 @@ const AddressManagement = () => {
 
   const handleSetDefault = async (id) => {
     try {
-      const res = await fetch(
-        `${API_BASE}/address/${id}/set-default`,
-        {
-          method: "PUT",
-          credentials: "include",
-        }
-      );
+      const res = await fetch(`${API_BASE}/address/${id}/set-default`, {
+        method: "PUT",
+        credentials: "include",
+      });
 
       if (!res.ok) throw new Error("Failed to set default");
 
@@ -258,6 +267,7 @@ const AddressManagement = () => {
     if (formErrors[field]) {
       setFormErrors({ ...formErrors, [field]: "" });
     }
+    setError("");
   };
 
   if (isCheckingAuth || !user) {
@@ -293,9 +303,9 @@ const AddressManagement = () => {
 
       <div className="max-w-5xl mx-auto px-4 py-8">
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl flex items-center">
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl flex items-center animate-shake">
             <AlertCircle size={16} className="mr-2" />
-            <span className="text-sm">{error}</span>
+            <span className="text-sm font-medium">{error}</span>
           </div>
         )}
 
@@ -329,14 +339,14 @@ const AddressManagement = () => {
                     onChange={(e) =>
                       handleInputChange("fullName", e.target.value)
                     }
-                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm ${
+                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
                       formErrors.fullName
                         ? "border-red-500 focus:border-red-500"
                         : "border-gray-200 focus:border-red-500"
                     }`}
                   />
                   {formErrors.fullName && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-xs mt-1 font-medium">
                       {formErrors.fullName}
                     </p>
                   )}
@@ -354,14 +364,14 @@ const AddressManagement = () => {
                       }
                     }}
                     maxLength={10}
-                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm ${
+                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
                       formErrors.phone
                         ? "border-red-500 focus:border-red-500"
                         : "border-gray-200 focus:border-red-500"
                     }`}
                   />
                   {formErrors.phone && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-xs mt-1 font-medium">
                       {formErrors.phone}
                     </p>
                   )}
@@ -374,14 +384,14 @@ const AddressManagement = () => {
                   placeholder="Email *"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm ${
+                  className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
                     formErrors.email
                       ? "border-red-500 focus:border-red-500"
                       : "border-gray-200 focus:border-red-500"
                   }`}
                 />
                 {formErrors.email && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-500 text-xs mt-1 font-medium">
                     {formErrors.email}
                   </p>
                 )}
@@ -395,14 +405,14 @@ const AddressManagement = () => {
                   onChange={(e) =>
                     handleInputChange("serviceLine", e.target.value)
                   }
-                  className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm ${
+                  className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
                     formErrors.serviceLine
                       ? "border-red-500 focus:border-red-500"
                       : "border-gray-200 focus:border-red-500"
                   }`}
                 />
                 {formErrors.serviceLine && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-500 text-xs mt-1 font-medium">
                     {formErrors.serviceLine}
                   </p>
                 )}
@@ -415,14 +425,14 @@ const AddressManagement = () => {
                     placeholder="City *"
                     value={formData.city}
                     onChange={(e) => handleInputChange("city", e.target.value)}
-                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm ${
+                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
                       formErrors.city
                         ? "border-red-500 focus:border-red-500"
                         : "border-gray-200 focus:border-red-500"
                     }`}
                   />
                   {formErrors.city && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-xs mt-1 font-medium">
                       {formErrors.city}
                     </p>
                   )}
@@ -432,7 +442,7 @@ const AddressManagement = () => {
                   <select
                     value={formData.state}
                     onChange={(e) => handleInputChange("state", e.target.value)}
-                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm ${
+                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
                       formErrors.state
                         ? "border-red-500 focus:border-red-500"
                         : "border-gray-200 focus:border-red-500"
@@ -446,7 +456,7 @@ const AddressManagement = () => {
                     ))}
                   </select>
                   {formErrors.state && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-xs mt-1 font-medium">
                       {formErrors.state}
                     </p>
                   )}
@@ -464,21 +474,21 @@ const AddressManagement = () => {
                       }
                     }}
                     maxLength={6}
-                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm ${
+                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
                       formErrors.pincode
                         ? "border-red-500 focus:border-red-500"
                         : "border-gray-200 focus:border-red-500"
                     }`}
                   />
                   {formErrors.pincode && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-xs mt-1 font-medium">
                       {formErrors.pincode}
                     </p>
                   )}
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm cursor-pointer w-fit">
                 <input
                   type="checkbox"
                   checked={formData.isDefault}
@@ -527,8 +537,10 @@ const AddressManagement = () => {
             {addresses.map((addr) => (
               <div
                 key={addr._id}
-                className={`bg-white rounded-3xl shadow-md p-5 ${
-                  addr.isDefault ? "border-2 border-emerald-400" : ""
+                className={`bg-white rounded-3xl shadow-md p-5 transition-all hover:shadow-lg ${
+                  addr.isDefault
+                    ? "border-2 border-emerald-400"
+                    : "border border-transparent"
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -546,8 +558,10 @@ const AddressManagement = () => {
                     <p className="text-sm text-gray-600">
                       {addr.city}, {addr.state} - {addr.pincode}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {addr.phone} • {addr.email}
+                    <p className="text-xs text-gray-500 mt-2 flex items-center gap-2">
+                      <span>📱 {addr.phone}</span>
+                      <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                      <span>✉️ {addr.email}</span>
                     </p>
                   </div>
 

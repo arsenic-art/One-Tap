@@ -13,13 +13,15 @@ import {
   Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../store/useAuthStore";
-import { useMechanicAuthStore } from "../../store/useAuthStore";
+import { useAuthStore, useMechanicAuthStore } from "../../store/useAuthStore";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const SPECIAL_CHAR_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
-const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api"
+const PHONE_REGEX = /^[6-9]\d{9}$/;
+
+const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api";
+
 const ProfileEditPage = () => {
   const navigate = useNavigate();
 
@@ -49,13 +51,7 @@ const ProfileEditPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({
-    firstName: "",
-    phoneNumber: "",
-    password: "",
-    confirmPassword: "",
-    profileImage: "",
-  });
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const currentUser = mechanic || user;
   const isCheckingAuth = userCheckingAuth || mechanicCheckingAuth;
@@ -75,14 +71,16 @@ const ProfileEditPage = () => {
     }
   }, [currentUser]);
 
+  const handleInputChange = (setter, field, value) => {
+    setter(value);
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+    setError("");
+  };
+
   const validateFields = () => {
-    const newErrors = {
-      firstName: "",
-      phoneNumber: "",
-      password: "",
-      confirmPassword: "",
-      profileImage: "",
-    };
+    const newErrors = {};
 
     const trimmedFirst = firstName.trim();
     const trimmedPhone = phoneNumber.trim();
@@ -95,8 +93,9 @@ const ProfileEditPage = () => {
 
     if (!trimmedPhone) {
       newErrors.phoneNumber = "Phone number is required.";
-    } else if (!/^\d{10,15}$/.test(trimmedPhone)) {
-      newErrors.phoneNumber = "Phone number must be 10–15 digits.";
+    } else if (!PHONE_REGEX.test(trimmedPhone)) {
+      newErrors.phoneNumber =
+        "Invalid phone number (10 digits starting with 6-9).";
     }
 
     if (password) {
@@ -168,6 +167,7 @@ const ProfileEditPage = () => {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setFieldErrors({});
 
     if (!validateFields()) {
       setError("Please fix the highlighted fields.");
@@ -206,7 +206,16 @@ const ProfileEditPage = () => {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to update profile");
+
+      if (!res.ok) {
+        if (data.errors) {
+          setFieldErrors(data.errors);
+          setError("Please fix the errors highlighted below.");
+        } else {
+          throw new Error(data.message || "Failed to update profile");
+        }
+        return;
+      }
 
       if (currentUser.role === "mechanic") {
         mechanicLoginSuccess(data);
@@ -220,6 +229,8 @@ const ProfileEditPage = () => {
       setSelectedFile(null);
       setDeleteImage(false);
       setSuccess("Profile updated successfully.");
+
+      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -350,7 +361,7 @@ const ProfileEditPage = () => {
           </div>
 
           {error && (
-            <div className="mb-4 flex items-center bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-sm">
+            <div className="mb-4 flex items-center bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-sm animate-shake">
               <AlertCircle size={16} className="mr-2" />
               <span>{error}</span>
             </div>
@@ -373,13 +384,13 @@ const ProfileEditPage = () => {
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
-                className="w-full text-sm"
+                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
               />
               <p className="text-[11px] text-gray-500 mt-1">
                 JPG/PNG/WEBP recommended. Max size 5 MB.
               </p>
               {fieldErrors.profileImage && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="text-xs text-red-500 mt-1 font-medium">
                   {fieldErrors.profileImage}
                 </p>
               )}
@@ -394,15 +405,17 @@ const ProfileEditPage = () => {
                 <input
                   type="text"
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className={`w-full px-3 py-2 rounded-xl border-2 text-sm focus:outline-none ${
+                  onChange={(e) =>
+                    handleInputChange(setFirstName, "firstName", e.target.value)
+                  }
+                  className={`w-full px-3 py-2 rounded-xl border-2 text-sm focus:outline-none transition-colors ${
                     fieldErrors.firstName
-                      ? "border-red-500"
+                      ? "border-red-500 focus:border-red-500"
                       : "border-gray-200 focus:border-red-500"
                   }`}
                 />
                 {fieldErrors.firstName && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 mt-1 font-medium">
                     {fieldErrors.firstName}
                   </p>
                 )}
@@ -415,7 +428,7 @@ const ProfileEditPage = () => {
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm"
+                  className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm transition-colors"
                 />
               </div>
             </div>
@@ -433,17 +446,23 @@ const ProfileEditPage = () => {
                 <input
                   type="tel"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className={`w-full pl-9 pr-3 py-2 rounded-xl border-2 text-sm focus:outline-none ${
+                  onChange={(e) =>
+                    handleInputChange(
+                      setPhoneNumber,
+                      "phoneNumber",
+                      e.target.value
+                    )
+                  }
+                  className={`w-full pl-9 pr-3 py-2 rounded-xl border-2 text-sm focus:outline-none transition-colors ${
                     fieldErrors.phoneNumber
-                      ? "border-red-500"
+                      ? "border-red-500 focus:border-red-500"
                       : "border-gray-200 focus:border-red-500"
                   }`}
-                  placeholder="+91XXXXXXXXXX"
+                  placeholder="9876543210"
                 />
               </div>
               {fieldErrors.phoneNumber && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="text-xs text-red-500 mt-1 font-medium">
                   {fieldErrors.phoneNumber}
                 </p>
               )}
@@ -463,17 +482,19 @@ const ProfileEditPage = () => {
                   <input
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={`w-full pl-9 pr-3 py-2 rounded-xl border-2 text-sm focus:outline-none ${
+                    onChange={(e) =>
+                      handleInputChange(setPassword, "password", e.target.value)
+                    }
+                    className={`w-full pl-9 pr-3 py-2 rounded-xl border-2 text-sm focus:outline-none transition-colors ${
                       fieldErrors.password
-                        ? "border-red-500"
+                        ? "border-red-500 focus:border-red-500"
                         : "border-gray-200 focus:border-red-500"
                     }`}
                     placeholder="Leave blank to keep current password"
                   />
                 </div>
                 {fieldErrors.password && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 mt-1 font-medium">
                     {fieldErrors.password}
                   </p>
                 )}
@@ -485,16 +506,22 @@ const ProfileEditPage = () => {
                 <input
                   type="password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`w-full px-3 py-2 rounded-xl border-2 text-sm focus:outline-none ${
+                  onChange={(e) =>
+                    handleInputChange(
+                      setConfirmPassword,
+                      "confirmPassword",
+                      e.target.value
+                    )
+                  }
+                  className={`w-full px-3 py-2 rounded-xl border-2 text-sm focus:outline-none transition-colors ${
                     fieldErrors.confirmPassword
-                      ? "border-red-500"
+                      ? "border-red-500 focus:border-red-500"
                       : "border-gray-200 focus:border-red-500"
                   }`}
                   placeholder="Repeat new password"
                 />
                 {fieldErrors.confirmPassword && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-xs text-red-500 mt-1 font-medium">
                     {fieldErrors.confirmPassword}
                   </p>
                 )}

@@ -12,6 +12,7 @@ const {
   verifyMechanicEmail,
   mechanicForgotPassword,
   mechanicResetPassword,
+  verifyMechanicOtp,
   logoutMechanic,
 } = require("../controllers/mechanicController");
 
@@ -20,6 +21,7 @@ router.post("/login", loginMechanic);
 router.get("/verify-email", verifyMechanicEmail);
 router.post("/logout", logoutMechanic);
 router.post("/forgot-password", mechanicForgotPassword);
+router.post("/verify-otp", verifyMechanicOtp);        
 router.post("/reset-password", mechanicResetPassword);
 
 router

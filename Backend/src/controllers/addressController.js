@@ -1,5 +1,18 @@
 const UserSavedAddress = require("../models/SavedAddress");
 
+const handleValidationErrors = (err, res) => {
+  const errors = {};
+  if (err.errors) {
+    Object.keys(err.errors).forEach((key) => {
+      errors[key] = err.errors[key].message;
+    });
+  }
+  return res.status(400).json({
+    message: "Validation failed",
+    errors,
+  });
+};
+
 const getUserAddresses = async (req, res) => {
   try {
     const addresses = await UserSavedAddress.find({
@@ -36,7 +49,7 @@ const getDefaultAddress = async (req, res) => {
 
 const addAddress = async (req, res) => {
   try {
-    const {
+    let {
       fullName,
       phone,
       email,
@@ -79,13 +92,8 @@ const addAddress = async (req, res) => {
   } catch (error) {
     console.error("addAddress error:", error);
     if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map((val) => val.message);
-      return res.status(400).json({
-        message: "Invalid data",
-        errors: messages,
-      });
+      return handleValidationErrors(error, res);
     }
-
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -113,7 +121,6 @@ const updateAddress = async (req, res) => {
       return res.status(404).json({ message: "Address not found" });
     }
 
-    // If setting as default, unset any existing default
     if (isDefault && !address.isDefault) {
       await UserSavedAddress.updateMany(
         { userId: req.user._id, isDefault: true },
@@ -139,13 +146,8 @@ const updateAddress = async (req, res) => {
   } catch (error) {
     console.error("updateAddress error:", error);
     if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map((val) => val.message);
-      return res.status(400).json({
-        message: "Invalid data",
-        errors: messages,
-      });
+      return handleValidationErrors(error, res);
     }
-
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -183,7 +185,6 @@ const setDefaultAddress = async (req, res) => {
       return res.status(404).json({ message: "Address not found" });
     }
 
-    // Unset all other defaults
     await UserSavedAddress.updateMany(
       { userId: req.user._id, isDefault: true },
       { isDefault: false }

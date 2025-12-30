@@ -7,7 +7,8 @@ const {
   updateUserProfile,
   verifyUserEmail,
   forgotPassword,
-  verifyOtpAndResetPassword,
+  resetPassword,
+  verifyOtp,
   logoutUser
 } = require("../controllers/authController");
 const { userAuth } = require("../middlewares/auth.middleware");
@@ -18,15 +19,17 @@ router.get("/verify-email", verifyUserEmail);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router
-  .route("/profile")
-  .get(userAuth, getUserProfile)
-  .put(
-    userAuth,
-    upload.single("profileImage"),  
-    updateUserProfile
-  );
+.route("/profile")
+.get(userAuth, getUserProfile)
+.put(
+  userAuth,
+  upload.single("profileImage"),  
+  updateUserProfile
+);
 
 router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", verifyOtpAndResetPassword);
+router.post("/verify-otp", verifyOtp);
+router.post("/reset-password", resetPassword);
+
 
 module.exports = router;

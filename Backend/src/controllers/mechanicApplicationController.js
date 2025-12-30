@@ -1,5 +1,16 @@
 const MechanicApplication = require("../models/MechanicApplication");
 
+const handleValidationErrors = (err, res) => {
+  const errors = {};
+  Object.keys(err.errors).forEach((key) => {
+    errors[key] = err.errors[key].message;
+  });
+  return res.status(400).json({
+    message: "Validation failed",
+    errors,
+  });
+};
+
 const submitApplication = async (req, res) => {
   try {
     if (!req.body) {
@@ -40,7 +51,7 @@ const submitApplication = async (req, res) => {
         ? JSON.parse(req.body.availability)
         : {},
       bio: req.body.bio,
-      storeImages, 
+      storeImages,
     });
 
     res.status(201).json({
@@ -48,6 +59,16 @@ const submitApplication = async (req, res) => {
       application,
     });
   } catch (err) {
+    if (err.name === "ValidationError") {
+      return handleValidationErrors(err, res);
+    }
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern)[0];
+      return res.status(400).json({
+        message: "Duplicate field value",
+        errors: { [field]: `${field} is already in use` },
+      });
+    }
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
@@ -97,12 +118,10 @@ const updateApplication = async (req, res) => {
     if (req.body.availability)
       application.availability = JSON.parse(req.body.availability);
 
-    // Logic to delete existing image
     if (req.body.deleteStoreImage === "true") {
       application.storeImages = [];
     }
 
-    // Logic to replace with new single image
     const file =
       req.file || (req.files && req.files.length > 0 ? req.files[0] : null);
 
@@ -122,6 +141,9 @@ const updateApplication = async (req, res) => {
       application: updatedApplication,
     });
   } catch (err) {
+    if (err.name === "ValidationError") {
+      return handleValidationErrors(err, res);
+    }
     console.error("Update Application Error:", err);
     res.status(500).json({ message: "Server error updating application" });
   }

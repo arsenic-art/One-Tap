@@ -55,31 +55,16 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    emailVerificationToken: {
-      type: String,
-    },
-    emailVerificationExpiry: {
-      type: Date,
-    },
+    emailVerificationToken: String,
+    emailVerificationExpiry: Date,
+
     profileImage: {
       type: String,
       default: null,
     },
-    resetPasswordToken: {
-      type: String,
-    },
-    resetPasswordExpiry: {
-      type: Date,
-    },
 
-    otpCode: {
-      type: String,
-    },
-    otpExpiry: {
-      type: Date,
-    },
-
-
+    otpCode: String,
+    otpExpiry: Date,
   },
   { timestamps: true }
 );

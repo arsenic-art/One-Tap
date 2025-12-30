@@ -39,7 +39,7 @@ const MechanicSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      default: "mechanic", 
+      default: "mechanic",
     },
     password: {
       type: String,
@@ -55,18 +55,16 @@ const MechanicSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-
-    emailVerificationToken: {
-      type: String,
-    },
-    emailVerificationExpiry: {
-      type: Date,
-    },
+    emailVerificationToken: String,
+    emailVerificationExpiry: Date,
 
     profileImage: {
       type: String,
       default: null,
     },
+
+    otpCode: String,
+    otpExpiry: Date,
   },
   { timestamps: true }
 );

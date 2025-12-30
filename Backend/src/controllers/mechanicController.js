@@ -28,6 +28,12 @@ const registerMechanic = async (req, res) => {
 
     const verifyUrl = `${process.env.FRONTEND_URL}/api/mechanic/verify-email?token=${token}`;
 
+    res.status(201).json({
+      message:
+        "Registration successful. Please verify your email before logging in.",
+      email: mechanic.email,
+    });
+
     await sendEmail({
       to: mechanic.email,
       subject: "Verify your OneTap mechanic account",
@@ -37,12 +43,6 @@ const registerMechanic = async (req, res) => {
         <a href="${verifyUrl}">Verify Email</a>
         <p>This link expires in 24 hours.</p>
       `,
-    });
-
-    res.status(201).json({
-      message:
-        "Registration successful. Please verify your email before logging in.",
-      email: mechanic.email,
     });
   } catch (err) {
     console.error("registerMechanic error:", err);
@@ -90,6 +90,40 @@ const loginMechanic = async (req, res) => {
     }
 
     if (!mechanic.isEmailVerified) {
+      if (
+        !mechanic.emailVerificationExpiry ||
+        mechanic.emailVerificationExpiry < Date.now()
+      ) {
+        const token = crypto.randomBytes(32).toString("hex");
+        const hashedToken = crypto
+          .createHash("sha256")
+          .update(token)
+          .digest("hex");
+
+        mechanic.emailVerificationToken = hashedToken;
+        mechanic.emailVerificationExpiry = Date.now() + 24 * 60 * 60 * 1000;
+        await mechanic.save();
+
+        const verifyUrl = `${process.env.FRONTEND_URL}/api/mechanic/verify-email?token=${token}`;
+
+        await sendEmail({
+          to: mechanic.email,
+          subject: "Verify your OneTap mechanic account",
+          html: `
+            <h2>Hello ${mechanic.firstName},</h2>
+            <p>Your previous verification link expired.</p>
+            <p>Please verify your email to activate your account.</p>
+            <a href="${verifyUrl}">Verify Email</a>
+            <p>This link expires in 24 hours.</p>
+          `,
+        });
+
+        return res.status(403).json({
+          message:
+            "Email not verified. A new verification link has been sent to your email.",
+        });
+      }
+
       return res
         .status(403)
         .json({ message: "Please verify your email before logging in" });
@@ -143,7 +177,8 @@ const getMechanicProfile = async (req, res) => {
 const updateMechanicProfile = async (req, res) => {
   try {
     const mechanic = await Mechanic.findById(req.mechanic._id);
-    if (!mechanic) return res.status(404).json({ message: "Mechanic not found" });
+    if (!mechanic)
+      return res.status(404).json({ message: "Mechanic not found" });
 
     if (req.body.firstName) mechanic.firstName = req.body.firstName;
     if (req.body.lastName) mechanic.lastName = req.body.lastName;
@@ -151,7 +186,7 @@ const updateMechanicProfile = async (req, res) => {
     if (req.body.password) mechanic.password = req.body.password;
 
     if (req.body.deleteProfileImage === "true") {
-        mechanic.profileImage = null;
+      mechanic.profileImage = null;
     }
 
     if (req.file) {
@@ -180,73 +215,142 @@ const mechanicForgotPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
-    const mechanic = await Mechanic.findOne({ email });
-    if (!mechanic) {
-      return res.status(404).json({ message: "Mechanic not found" });
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: "Email is required" });
     }
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
 
-    mechanic.resetPasswordToken = hashedToken;
-    mechanic.resetPasswordExpiry = Date.now() + 15 * 60 * 1000;
+    const mechanic = await Mechanic.findOne({
+      email: email.trim().toLowerCase(),
+    });
+    if (!mechanic) {
+      return res
+        .status(404)
+        .json({ message: "No mechanic account found with this email" });
+    }
+
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+    mechanic.otpCode = otp;
+    mechanic.otpExpiry = Date.now() + 10 * 60 * 1000; 
 
     await mechanic.save();
 
-    const resetLink = `${process.env.FRONTEND_URL}/api/mechanic/reset-password?token=${resetToken}`;
-
     await sendEmail({
       to: mechanic.email,
-      subject: "Reset your OneTap mechanic password",
+      subject: "OneTap Mechanic Password Reset OTP",
       html: `
-        <p>You requested a password reset.</p>
-        <a href="${resetLink}">Click here to reset password</a>
-        <p>This link expires in 15 minutes.</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #dc2626;">Your OneTap Mechanic Password Reset OTP</h2>
+          <div style="background: #fef3c7; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+            <h1 style="font-size: 48px; font-weight: bold; color: #b91c1c; margin: 0; letter-spacing: 8px;">
+              ${otp}
+            </h1>
+            <p style="margin: 10px 0 0 0; color: #92400e;">This code expires in 10 minutes</p>
+          </div>
+          <p>If you didn't request this, please ignore this email.</p>
+        </div>
       `,
     });
 
-    res.json({ message: "Password reset email sent" });
+    res.json({
+      message: "OTP sent to your email",
+      email: mechanic.email,
+    });
   } catch (err) {
     console.error("mechanicForgotPassword error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Failed to send OTP" });
+  }
+};
+
+const verifyMechanicOtp = async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const mechanic = await Mechanic.findOne({
+      email: email.trim().toLowerCase(),
+      otpCode: otp,
+      otpExpiry: { $gt: Date.now() },
+    });
+
+    if (!mechanic) {
+      return res.status(400).json({
+        message: "Invalid or expired OTP",
+      });
+    }
+
+    res.json({
+      message: "OTP verified successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Verify mechanic OTP error:", error);
+    res.status(500).json({ message: "Failed to verify OTP" });
   }
 };
 
 const mechanicResetPassword = async (req, res) => {
-  const { token, newPassword } = req.body;
+  const { email, otp, newPassword } = req.body;
 
   try {
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        message: "Email, OTP, and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters long",
+      });
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      return res.status(400).json({
+        message: "Password must contain at least one special character",
+      });
+    }
 
     const mechanic = await Mechanic.findOne({
-      resetPasswordToken: hashedToken,
-      resetPasswordExpiry: { $gt: Date.now() },
+      email: email.trim().toLowerCase(),
+      otpCode: otp,
+      otpExpiry: { $gt: Date.now() },
     });
 
     if (!mechanic) {
-      return res.status(400).json({ message: "Invalid or expired token" });
+      return res.status(400).json({
+        message: "Invalid or expired OTP",
+      });
     }
 
+    mechanic.otpCode = undefined;
+    mechanic.otpExpiry = undefined;
     mechanic.password = newPassword;
-    mechanic.resetPasswordToken = undefined;
-    mechanic.resetPasswordExpiry = undefined;
 
     await mechanic.save();
 
-    res.json({ message: "Password reset successful" });
+    res.json({
+      message: "Password reset successful",
+      success: true,
+    });
   } catch (err) {
     console.error("mechanicResetPassword error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Failed to reset password" });
   }
 };
 
 const logoutMechanic = (req, res) => {
   res.cookie("token", "", {
     httpOnly: true,
-    expires: new Date(0),  
+    expires: new Date(0),
     secure: true,
     sameSite: "None",
   });
@@ -261,6 +365,7 @@ module.exports = {
   updateMechanicProfile,
   verifyMechanicEmail,
   mechanicForgotPassword,
+  verifyMechanicOtp,
   mechanicResetPassword,
   logoutMechanic,
 };

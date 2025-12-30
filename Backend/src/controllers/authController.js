@@ -60,12 +60,12 @@ const registerUser = async (req, res) => {
 
     const verifyUrl = `${process.env.FRONTEND_URL}/api/user/verify-email?token=${token}`;
 
-    console.log("atThisStage");
     res.status(201).json({
       message:
-      "Registration successful. Please verify your email before logging in.",
+        "Registration successful. Please verify your email before logging in.",
       email: newUser.email,
     });
+
     await sendEmail({
       to: newUser.email,
       subject: "Verify your OneTap account",
@@ -76,8 +76,6 @@ const registerUser = async (req, res) => {
         <p>This link expires in 24 hours.</p>
       `,
     });
-    console.log("atThisStage2");
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
@@ -106,7 +104,7 @@ const loginUser = async (req, res) => {
           .digest("hex");
 
         user.emailVerificationToken = hashedToken;
-        user.emailVerificationExpiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hrs
+        user.emailVerificationExpiry = Date.now() + 24 * 60 * 60 * 1000;
         await user.save();
 
         const verifyUrl = `${process.env.FRONTEND_URL}/api/user/verify-email?token=${token}`;
@@ -185,7 +183,7 @@ const updateUserProfile = async (req, res) => {
     if (req.body.password) user.password = req.body.password;
 
     if (req.body.deleteProfileImage === "true") {
-        user.profileImage = null;
+      user.profileImage = null;
     }
 
     if (req.file) {
@@ -214,20 +212,27 @@ const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: "Email is required" });
     }
 
-    // 4-digit OTP
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ message: "No account found with this email" });
+    }
+
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
     user.otpCode = otp;
-    user.otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    user.otpExpiry = Date.now() + 10 * 60 * 1000; 
 
     await user.save();
 
-    // Send OTP via email
     await sendEmail({
       to: user.email,
       subject: "OneTap Password Reset OTP",
@@ -245,19 +250,70 @@ const forgotPassword = async (req, res) => {
       `,
     });
 
-    res.json({ message: "OTP sent to your email" });
+    res.json({ 
+      message: "OTP sent to your email",
+      email: user.email 
+    });
   } catch (error) {
     console.error("Forgot password error:", error);
     res.status(500).json({ message: "Failed to send OTP" });
   }
 };
 
-const verifyOtpAndResetPassword = async (req, res) => {
+const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+      otpCode: otp,
+      otpExpiry: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid or expired OTP",
+      });
+    }
+
+    res.json({
+      message: "OTP verified successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Verify OTP error:", error);
+    res.status(500).json({ message: "Failed to verify OTP" });
+  }
+};
+
+const resetPassword = async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
   try {
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ 
+        message: "Email, OTP, and new password are required" 
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        message: "Password must be at least 6 characters long" 
+      });
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      return res.status(400).json({ 
+        message: "Password must contain at least one special character" 
+      });
+    }
+
     const user = await User.findOne({
-      email,
+      email: email.trim().toLowerCase(),
       otpCode: otp,
       otpExpiry: { $gt: Date.now() },
     });
@@ -270,7 +326,7 @@ const verifyOtpAndResetPassword = async (req, res) => {
 
     user.otpCode = undefined;
     user.otpExpiry = undefined;
-    user.password = newPassword;
+    user.password = newPassword; 
 
     await user.save();
 
@@ -284,41 +340,16 @@ const verifyOtpAndResetPassword = async (req, res) => {
   }
 };
 
-const resetPassword = async (req, res) => {
-  const { token, newPassword } = req.body;
-
-  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
-  const user = await User.findOne({
-    resetPasswordToken: hashedToken,
-    resetPasswordExpiry: { $gt: Date.now() },
-  });
-
-  if (!user) {
-    return res.status(400).json({ message: "Invalid or expired token" });
-  }
-
-  user.password = newPassword;
-
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpiry = undefined;
-
-  await user.save();
-
-  res.json({ message: "Password reset successful" });
-};
-
 const logoutUser = (req, res) => {
   res.cookie("token", "", {
     httpOnly: true,
-    secure: true,            
-    sameSite: "None",       
+    secure: true,
+    sameSite: "None",
     expires: new Date(0),
   });
 
   res.status(200).json({ message: "Logged out successfully" });
 };
-
 
 module.exports = {
   registerUser,
@@ -327,7 +358,7 @@ module.exports = {
   updateUserProfile,
   verifyUserEmail,
   forgotPassword,
+  verifyOtp,
   resetPassword,
-  verifyOtpAndResetPassword,
   logoutUser,
 };

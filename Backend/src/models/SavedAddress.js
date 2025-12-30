@@ -8,57 +8,50 @@ const userSavedAddressSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-
     fullName: {
       type: String,
-      required: true,
+      required: [true, "Full name is required"],
       trim: true,
     },
-
     phone: {
       type: String,
-      required: true,
+      required: [true, "Phone number is required"],
       trim: true,
+      match: [/^[6-9]\d{9}$/, "Please enter a valid Indian phone number"],
     },
-
     email: {
       type: String,
-      required: true,
+      required: [true, "Email is required"],
       trim: true,
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Please use a valid email address"],
       index: true,
     },
-
     serviceLine: {
       type: String,
-      required: true,
+      required: [true, "Address line is required"],
       trim: true,
     },
-
     city: {
       type: String,
-      required: true,
+      required: [true, "City is required"],
       trim: true,
     },
-
     state: {
       type: String,
-      required: true,
+      required: [true, "State is required"],
       trim: true,
     },
-
     pincode: {
       type: String,
-      required: true,
+      required: [true, "Pincode is required"],
       trim: true,
+      match: [/^[1-9][0-9]{5}$/, "Please enter a valid 6-digit pincode"],
     },
-
     country: {
       type: String,
       default: "India",
     },
-
     isDefault: {
       type: Boolean,
       default: false,

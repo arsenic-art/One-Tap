@@ -32,6 +32,9 @@ const SERVICE_OPTIONS = [
 const VEHICLE_OPTIONS = ["Car", "Bike", "Both"];
 const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^[6-9]\d{9}$/; 
+
 const AddMechanicPage = () => {
   const { mechanic } = useMechanicAuthStore();
 
@@ -133,36 +136,85 @@ const AddMechanicPage = () => {
     }
   }, [location]);
 
+  const validateField = (name, value) => {
+    let error = "";
+    switch (name) {
+      case "fullStoreName":
+        if (!value.trim()) error = "Store name is required";
+        else if (value.trim().length < 2)
+          error = "Store name must be at least 2 characters";
+        break;
+      case "email":
+        if (!value.trim()) error = "Email is required";
+        else if (!EMAIL_REGEX.test(value))
+          error = "Please enter a valid email address";
+        break;
+      case "phone":
+        if (!value.trim()) error = "Phone number is required";
+        else if (!PHONE_REGEX.test(value))
+          error = "Invalid phone number (10 digits starting with 6-9)";
+        break;
+      case "city":
+        if (!value.trim()) error = "City is required";
+        break;
+      case "experienceYears":
+        if (!value) error = "Experience is required";
+        else if (parseInt(value) < 0) error = "Experience cannot be negative";
+        break;
+      case "vehicleSpecialization":
+        if (!value) error = "Vehicle specialization is required";
+        break;
+      case "bio":
+        if (!value.trim()) error = "Bio is required";
+        else if (value.trim().length < 50)
+          error = "Bio must be at least 50 characters long";
+        break;
+      default:
+        break;
+    }
+    return error;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
+
+    const error = validateField(name, value);
+    setErrors((prev) => ({ ...prev, [name]: error }));
   };
 
   const handleServiceChange = (service) => {
-    setFormData((prev) => ({
-      ...prev,
-      servicesProvided: prev.servicesProvided.includes(service)
+    setFormData((prev) => {
+      const newServices = prev.servicesProvided.includes(service)
         ? prev.servicesProvided.filter((s) => s !== service)
-        : [...prev.servicesProvided, service],
-    }));
-    setErrors((prev) => ({ ...prev, servicesProvided: "" }));
+        : [...prev.servicesProvided, service];
+
+      if (newServices.length > 0) {
+        setErrors((p) => ({ ...p, servicesProvided: "" }));
+      }
+      return { ...prev, servicesProvided: newServices };
+    });
   };
 
   const handleAvailabilityChange = (day, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      availability: {
+    setFormData((prev) => {
+      const updatedAvailability = {
         ...prev.availability,
         [day]: {
           ...prev.availability[day],
           [field]: value,
         },
-      },
-    }));
+      };
+
+      if (field === "hours" && value.trim()) {
+        setErrors((p) => ({ ...p, availability: "" }));
+      }
+
+      return { ...prev, availability: updatedAvailability };
+    });
   };
 
   const handleImageChange = (e) => {
@@ -174,6 +226,14 @@ const AddMechanicPage = () => {
         ...prev,
         storeImages:
           "Please remove the existing image before uploading a new one.",
+      }));
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({
+        ...prev,
+        storeImages: "Image size must be less than 5MB.",
       }));
       return;
     }
@@ -192,39 +252,26 @@ const AddMechanicPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[6-9]\d{9}$/;
 
-    if (!formData.fullStoreName.trim()) {
-      newErrors.fullStoreName = "Store name is required";
-    } else if (formData.fullStoreName.length < 2) {
-      newErrors.fullStoreName = "Store name must be at least 2 characters";
-    }
+    Object.keys(formData).forEach((key) => {
+      if (typeof formData[key] === "string") {
+        const error = validateField(key, formData[key]);
+        if (error) newErrors[key] = error;
+      }
+    });
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!phoneRegex.test(formData.phone)) {
-      newErrors.phone = "Invalid phone number (10 digits starting with 6-9)";
-    }
-
-    if (!formData.city.trim()) newErrors.city = "City is required";
-    if (!formData.experienceYears)
-      newErrors.experienceYears = "Experience is required";
-    if (!formData.vehicleSpecialization)
-      newErrors.vehicleSpecialization = "Vehicle specialization is required";
-    if (formData.servicesProvided.length === 0)
+    if (formData.servicesProvided.length === 0) {
       newErrors.servicesProvided = "At least one service is required";
+    }
 
-    if (!formData.bio.trim()) {
-      newErrors.bio = "Bio is required";
-    } else if (formData.bio.length < 50) {
-      newErrors.bio = "Bio must be at least 50 characters long";
+    let availabilityError = false;
+    Object.values(formData.availability).forEach((daySchedule) => {
+      if (daySchedule.available && !daySchedule.hours.trim()) {
+        availabilityError = true;
+      }
+    });
+    if (availabilityError) {
+      newErrors.availability = "Please enter hours for all selected days.";
     }
 
     setErrors(newErrors);
@@ -232,7 +279,11 @@ const AddMechanicPage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      setApiError("Please fix the errors in the form before submitting.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
 
     setIsSubmitting(true);
     setApiError("");
@@ -295,6 +346,7 @@ const AddMechanicPage = () => {
       setIsSubmitted(true);
     } catch (err) {
       setApiError(err.message || "Something went wrong");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsSubmitting(false);
     }
@@ -448,7 +500,7 @@ const AddMechanicPage = () => {
             {renderStatusBanner()}
 
             {apiError && (
-              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl flex items-center gap-3">
+              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl flex items-center gap-3 animate-shake">
                 <AlertCircle className="text-red-500 shrink-0" size={20} />
                 <p className="text-red-700 text-sm font-medium">{apiError}</p>
               </div>
@@ -516,6 +568,7 @@ const AddMechanicPage = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
+                      maxLength={10}
                       className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none focus:border-red-500 transition-colors ${
                         errors.phone ? "border-red-300" : "border-gray-200"
                       }`}
@@ -684,7 +737,7 @@ const AddMechanicPage = () => {
                               Click to upload store image
                             </span>
                             <span className="text-xs text-gray-400 mt-1">
-                              PNG, JPG up to 10MB
+                              PNG, JPG up to 5MB
                             </span>
                           </label>
                         </div>
@@ -752,6 +805,13 @@ const AddMechanicPage = () => {
                   Weekly Availability
                 </h3>
 
+                {errors.availability && (
+                  <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-center">
+                    <AlertCircle size={16} className="mr-2" />
+                    {errors.availability}
+                  </div>
+                )}
+
                 <div className="space-y-3">
                   {Object.keys(formData.availability).map((day) => (
                     <div key={day} className="flex items-center gap-4">
@@ -783,7 +843,12 @@ const AddMechanicPage = () => {
                               e.target.value
                             )
                           }
-                          className="flex-1 px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm"
+                          className={`flex-1 px-3 py-2 rounded-xl border-2 focus:outline-none focus:border-red-500 text-sm ${
+                            errors.availability &&
+                            !formData.availability[day].hours
+                              ? "border-red-300 bg-red-50"
+                              : "border-gray-200"
+                          }`}
                           placeholder="e.g., 9 AM - 6 PM"
                         />
                       )}

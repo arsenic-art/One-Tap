@@ -11,6 +11,9 @@ import {
   Lock,
   CheckCircle,
   Trash2,
+  Eye,
+  EyeOff,
+  Camera,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore, useMechanicAuthStore } from "../../store/useAuthStore";
@@ -42,8 +45,11 @@ const ProfileEditPage = () => {
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [previewSrc, setPreviewSrc] = useState("");
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [deleteImage, setDeleteImage] = useState(false);
@@ -71,6 +77,14 @@ const ProfileEditPage = () => {
     }
   }, [currentUser]);
 
+  useEffect(() => {
+    return () => {
+      if (previewSrc && previewSrc.startsWith("blob:")) {
+        URL.revokeObjectURL(previewSrc);
+      }
+    };
+  }, [previewSrc]);
+
   const handleInputChange = (setter, field, value) => {
     setter(value);
     if (fieldErrors[field]) {
@@ -81,7 +95,6 @@ const ProfileEditPage = () => {
 
   const validateFields = () => {
     const newErrors = {};
-
     const trimmedFirst = firstName.trim();
     const trimmedPhone = phoneNumber.trim();
 
@@ -120,9 +133,7 @@ const ProfileEditPage = () => {
     }
 
     setFieldErrors(newErrors);
-
-    const hasError = Object.values(newErrors).some((v) => v);
-    return !hasError;
+    return !Object.values(newErrors).some((v) => v);
   };
 
   const handleFileChange = (e) => {
@@ -150,17 +161,16 @@ const ProfileEditPage = () => {
     setSelectedFile(file);
     setDeleteImage(false);
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewSrc(reader.result || "");
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewSrc(objectUrl);
   };
 
   const handleDeleteImage = () => {
     setSelectedFile(null);
     setPreviewSrc("");
     setDeleteImage(true);
+    const fileInput = document.getElementById("profile-upload");
+    if (fileInput) fileInput.value = "";
   };
 
   const handleSubmit = async (e) => {
@@ -171,6 +181,7 @@ const ProfileEditPage = () => {
 
     if (!validateFields()) {
       setError("Please fix the highlighted fields.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -179,9 +190,7 @@ const ProfileEditPage = () => {
     formData.append("lastName", lastName.trim());
     formData.append("phoneNumber", phoneNumber.trim());
 
-    if (password) {
-      formData.append("password", password);
-    }
+    if (password) formData.append("password", password);
 
     if (selectedFile) {
       formData.append("profileImage", selectedFile);
@@ -278,7 +287,7 @@ const ProfileEditPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white py-6">
+      <div className="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white py-6 shadow-md">
         <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <button
@@ -296,16 +305,16 @@ const ProfileEditPage = () => {
               </p>
             </div>
           </div>
-          <UserIcon size={40} className="opacity-90" />
+          <UserIcon size={32} className="opacity-80" />
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-8">
-          {/* Avatar + basic info */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-gray-400 text-3xl relative group">
+        <div className="bg-white rounded-3xl shadow-xl p-6 md:p-8">
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="relative group">
+              <div className="w-32 h-32 rounded-full border-4 border-gray-100 shadow-inner overflow-hidden flex items-center justify-center bg-gray-50">
                 {previewSrc ? (
                   <img
                     src={previewSrc}
@@ -313,233 +322,266 @@ const ProfileEditPage = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <UserIcon size={32} />
-                )}
-
-                {/* Image Overlay with Delete Button */}
-                {previewSrc && (
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={handleDeleteImage}
-                      className="bg-white p-1.5 rounded-full text-red-600 hover:bg-red-50 transition-colors"
-                      title="Remove photo"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                  <UserIcon size={48} className="text-gray-300" />
                 )}
               </div>
 
-              <div>
-                <p className="text-lg font-bold text-gray-900">{fullName}</p>
-                <p className="text-sm text-gray-600 flex items-center">
-                  <Mail size={14} className="mr-1" />
-                  {currentUser.email}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Email cannot be changed.
-                </p>
-              </div>
+              <label
+                htmlFor="profile-upload"
+                className="absolute bottom-1 right-1 bg-red-600 text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-red-700 transition-transform hover:scale-105"
+                title="Upload new photo"
+              >
+                <Camera size={18} />
+              </label>
+              <input
+                id="profile-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
             </div>
 
-            <div className="flex flex-col items-end gap-1">
-              <p className="flex items-center text-xs text-gray-600">
-                <ImageIcon size={14} className="mr-1" />
-                Update profile picture
-              </p>
+            <div className="mt-3 flex gap-4 text-sm">
               {previewSrc && (
                 <button
                   type="button"
                   onClick={handleDeleteImage}
-                  className="text-xs text-red-500 font-semibold hover:underline flex items-center"
+                  className="text-red-500 hover:text-red-700 font-medium flex items-center gap-1"
                 >
-                  <Trash2 size={12} className="mr-1" /> Remove Photo
+                  <Trash2 size={14} /> Remove Photo
                 </button>
               )}
             </div>
+            {fieldErrors.profileImage && (
+              <p className="text-xs text-red-500 mt-1 font-medium">
+                {fieldErrors.profileImage}
+              </p>
+            )}
           </div>
 
+          <div className="border-b border-gray-100 mb-6"></div>
+
           {error && (
-            <div className="mb-4 flex items-center bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-sm animate-shake">
-              <AlertCircle size={16} className="mr-2" />
+            <div className="mb-6 flex items-center bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm animate-shake">
+              <AlertCircle size={18} className="mr-2" />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="mb-4 flex items-center bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-xl text-sm">
-              <CheckCircle size={16} className="mr-2" />
+            <div className="mb-6 flex items-center bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">
+              <CheckCircle size={18} className="mr-2" />
               <span>{success}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* File input */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Personal Info */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Profile Image
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-              />
-              <p className="text-[11px] text-gray-500 mt-1">
-                JPG/PNG/WEBP recommended. Max size 5 MB.
-              </p>
-              {fieldErrors.profileImage && (
-                <p className="text-xs text-red-500 mt-1 font-medium">
-                  {fieldErrors.profileImage}
-                </p>
-              )}
-            </div>
-
-            {/* Name fields */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) =>
-                    handleInputChange(setFirstName, "firstName", e.target.value)
-                  }
-                  className={`w-full px-3 py-2 rounded-xl border-2 text-sm focus:outline-none transition-colors ${
-                    fieldErrors.firstName
-                      ? "border-red-500 focus:border-red-500"
-                      : "border-gray-200 focus:border-red-500"
-                  }`}
-                />
-                {fieldErrors.firstName && (
-                  <p className="text-xs text-red-500 mt-1 font-medium">
-                    {fieldErrors.firstName}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Phone Number *
-              </label>
-              <div className="relative">
-                <Phone
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) =>
-                    handleInputChange(
-                      setPhoneNumber,
-                      "phoneNumber",
-                      e.target.value
-                    )
-                  }
-                  className={`w-full pl-9 pr-3 py-2 rounded-xl border-2 text-sm focus:outline-none transition-colors ${
-                    fieldErrors.phoneNumber
-                      ? "border-red-500 focus:border-red-500"
-                      : "border-gray-200 focus:border-red-500"
-                  }`}
-                  placeholder="9876543210"
-                />
-              </div>
-              {fieldErrors.phoneNumber && (
-                <p className="text-xs text-red-500 mt-1 font-medium">
-                  {fieldErrors.phoneNumber}
-                </p>
-              )}
-            </div>
-
-            {/* Password change */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  New Password (optional)
-                </label>
-                <div className="relative">
-                  <Lock
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
+              <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
+                <UserIcon size={18} /> Personal Information
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                    First Name *
+                  </label>
                   <input
-                    type="password"
-                    value={password}
+                    type="text"
+                    value={firstName}
                     onChange={(e) =>
-                      handleInputChange(setPassword, "password", e.target.value)
+                      handleInputChange(
+                        setFirstName,
+                        "firstName",
+                        e.target.value
+                      )
                     }
-                    className={`w-full pl-9 pr-3 py-2 rounded-xl border-2 text-sm focus:outline-none transition-colors ${
-                      fieldErrors.password
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-sm focus:outline-none transition-colors ${
+                      fieldErrors.firstName
                         ? "border-red-500 focus:border-red-500"
                         : "border-gray-200 focus:border-red-500"
                     }`}
-                    placeholder="Leave blank to keep current password"
+                  />
+                  {fieldErrors.firstName && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.firstName}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-red-500 text-sm transition-colors"
                   />
                 </div>
-                {fieldErrors.password && (
-                  <p className="text-xs text-red-500 mt-1 font-medium">
-                    {fieldErrors.password}
-                  </p>
-                )}
+              </div>
+            </div>
+
+            {/* Contact Info */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="email"
+                    value={currentUser.email}
+                    disabled
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-500 text-sm cursor-not-allowed"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  Email cannot be changed.
+                </p>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Confirm New Password
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                  Phone Number *
                 </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) =>
-                    handleInputChange(
-                      setConfirmPassword,
-                      "confirmPassword",
-                      e.target.value
-                    )
-                  }
-                  className={`w-full px-3 py-2 rounded-xl border-2 text-sm focus:outline-none transition-colors ${
-                    fieldErrors.confirmPassword
-                      ? "border-red-500 focus:border-red-500"
-                      : "border-gray-200 focus:border-red-500"
-                  }`}
-                  placeholder="Repeat new password"
-                />
-                {fieldErrors.confirmPassword && (
-                  <p className="text-xs text-red-500 mt-1 font-medium">
-                    {fieldErrors.confirmPassword}
+                <div className="relative">
+                  <Phone
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) =>
+                      handleInputChange(
+                        setPhoneNumber,
+                        "phoneNumber",
+                        e.target.value
+                      )
+                    }
+                    className={`w-full pl-10 pr-4 py-3 rounded-xl border-2 text-sm focus:outline-none transition-colors ${
+                      fieldErrors.phoneNumber
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-gray-200 focus:border-red-500"
+                    }`}
+                    placeholder="9876543210"
+                  />
+                </div>
+                {fieldErrors.phoneNumber && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.phoneNumber}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="border-t border-gray-100 my-4"></div>
+
+            {/* Security Section */}
+            <div>
+              <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
+                <Lock size={18} /> Security
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) =>
+                        handleInputChange(
+                          setPassword,
+                          "password",
+                          e.target.value
+                        )
+                      }
+                      className={`w-full px-4 py-3 rounded-xl border-2 text-sm focus:outline-none transition-colors pr-10 ${
+                        fieldErrors.password
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-200 focus:border-red-500"
+                      }`}
+                      placeholder="Leave blank to keep current"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {fieldErrors.password && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.password}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) =>
+                        handleInputChange(
+                          setConfirmPassword,
+                          "confirmPassword",
+                          e.target.value
+                        )
+                      }
+                      className={`w-full px-4 py-3 rounded-xl border-2 text-sm focus:outline-none transition-colors pr-10 ${
+                        fieldErrors.confirmPassword
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-200 focus:border-red-500"
+                      }`}
+                      placeholder="Repeat new password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </button>
+                  </div>
+                  {fieldErrors.confirmPassword && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.confirmPassword}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-4">
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="border-2 border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-all duration-300"
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:from-red-700 hover:to-orange-600 transition-all duration-300 flex items-center disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-gradient-to-r from-red-600 to-orange-500 text-white px-8 py-3 rounded-xl text-sm font-bold hover:shadow-lg hover:scale-[1.02] transition-all flex items-center disabled:opacity-70 disabled:hover:scale-100 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <>
@@ -548,16 +590,12 @@ const ProfileEditPage = () => {
                   </>
                 ) : (
                   <>
-                    <Save size={16} className="mr-2" />
+                    <Save size={18} className="mr-2" />
                     Save Changes
                   </>
                 )}
               </button>
             </div>
-
-            <p className="text-[11px] text-gray-500 mt-2">
-              Changing your password and profile image takes effect immediately.
-            </p>
           </form>
         </div>
       </div>

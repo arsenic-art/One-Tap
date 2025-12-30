@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Loader2,
   AlertCircle,
+  Save,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -59,6 +60,7 @@ const AddressManagement = () => {
 
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -87,9 +89,7 @@ const AddressManagement = () => {
       const res = await fetch(`${API_BASE}/address`, {
         credentials: "include",
       });
-
       if (!res.ok) throw new Error("Failed to fetch addresses");
-
       const data = await res.json();
       setAddresses(data.addresses || []);
     } catch (err) {
@@ -101,14 +101,16 @@ const AddressManagement = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user?._id) {
       fetchAddresses();
     }
-  }, [user]);
+  }, [user?._id]);
 
   const resetForm = () => {
     setFormData({
-      fullName: user?.firstName + " " + (user?.lastName || "") || "",
+      fullName: user?.firstName
+        ? `${user.firstName} ${user.lastName || ""}`
+        : "",
       phone: user?.phoneNumber || "",
       email: user?.email || "",
       serviceLine: "",
@@ -136,54 +138,31 @@ const AddressManagement = () => {
     setEditingId(addr._id);
     setShowForm(true);
     setFormErrors({});
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const validatePhone = (phone) => {
-    const phoneRegex = /^[6-9]\d{9}$/;
-    return phoneRegex.test(phone);
-  };
-
-  const validatePincode = (pincode) => {
-    const pincodeRegex = /^[1-9][0-9]{5}$/;
-    return pincodeRegex.test(pincode);
-  };
+  const validatePhone = (phone) => /^[6-9]\d{9}$/.test(phone);
+  const validatePincode = (pincode) => /^[1-9][0-9]{5}$/.test(pincode);
 
   const validateForm = () => {
     const errors = {};
-
-    if (!formData.fullName.trim()) {
-      errors.fullName = "Full name is required";
-    }
-
-    if (!formData.phone.trim()) {
-      errors.phone = "Phone number is required";
-    } else if (!validatePhone(formData.phone)) {
+    if (!formData.fullName.trim()) errors.fullName = "Full name is required";
+    if (!formData.phone.trim()) errors.phone = "Phone number is required";
+    else if (!validatePhone(formData.phone))
       errors.phone = "Enter valid 10-digit Indian mobile number";
-    }
 
-    if (!formData.email.trim()) {
-      errors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (!formData.email.trim()) errors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       errors.email = "Enter valid email address";
-    }
 
-    if (!formData.serviceLine.trim()) {
+    if (!formData.serviceLine.trim())
       errors.serviceLine = "Address line is required";
-    }
+    if (!formData.city.trim()) errors.city = "City is required";
+    if (!formData.state) errors.state = "State is required";
 
-    if (!formData.city.trim()) {
-      errors.city = "City is required";
-    }
-
-    if (!formData.state) {
-      errors.state = "State is required";
-    }
-
-    if (!formData.pincode.trim()) {
-      errors.pincode = "Pincode is required";
-    } else if (!validatePincode(formData.pincode)) {
+    if (!formData.pincode.trim()) errors.pincode = "Pincode is required";
+    else if (!validatePincode(formData.pincode))
       errors.pincode = "Enter valid 6-digit pincode";
-    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -200,6 +179,7 @@ const AddressManagement = () => {
     }
 
     try {
+      setIsSubmitting(true); 
       const url = editingId
         ? `${API_BASE}/address/${editingId}`
         : `${API_BASE}/address`;
@@ -227,20 +207,19 @@ const AddressManagement = () => {
       resetForm();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setIsSubmitting(false); 
     }
   };
 
   const handleDelete = async (id) => {
     if (!confirm("Delete this address?")) return;
-
     try {
       const res = await fetch(`${API_BASE}/address/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
-
       if (!res.ok) throw new Error("Failed to delete");
-
       await fetchAddresses();
     } catch (err) {
       setError(err.message);
@@ -253,9 +232,7 @@ const AddressManagement = () => {
         method: "PUT",
         credentials: "include",
       });
-
       if (!res.ok) throw new Error("Failed to set default");
-
       await fetchAddresses();
     } catch (err) {
       setError(err.message);
@@ -264,9 +241,7 @@ const AddressManagement = () => {
 
   const handleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
-    if (formErrors[field]) {
-      setFormErrors({ ...formErrors, [field]: "" });
-    }
+    if (formErrors[field]) setFormErrors({ ...formErrors, [field]: "" });
     setError("");
   };
 
@@ -281,7 +256,7 @@ const AddressManagement = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white py-6">
+      <div className="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white py-6 shadow-lg">
         <div className="max-w-5xl mx-auto px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -316,139 +291,162 @@ const AddressManagement = () => {
               resetForm();
               setShowForm(true);
             }}
-            className="mb-6 flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-orange-500 text-white text-sm font-semibold hover:from-red-700 hover:to-orange-600 transition-all shadow-md"
+            className="mb-6 flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-red-600 text-sm font-bold border-2 border-red-100 hover:border-red-500 hover:bg-red-50 transition-all shadow-sm"
           >
-            <Plus size={16} />
+            <Plus size={18} />
             Add New Address
           </button>
         )}
 
         {/* Form */}
         {showForm && (
-          <div className="bg-white rounded-3xl shadow-xl p-6 mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
+          <div className="bg-white rounded-3xl shadow-xl p-6 mb-8 border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+              {editingId ? (
+                <Edit2 size={18} className="text-blue-500" />
+              ) : (
+                <Plus size={18} className="text-green-500" />
+              )}
               {editingId ? "Edit Address" : "Add New Address"}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1 ml-1">
+                    Full Name
+                  </label>
                   <input
                     type="text"
-                    placeholder="Full Name *"
+                    placeholder="e.g. Rahul Kumar"
                     value={formData.fullName}
                     onChange={(e) =>
                       handleInputChange("fullName", e.target.value)
                     }
-                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                       formErrors.fullName
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-200 focus:border-red-500"
+                        ? "border-red-500 focus:ring-red-200"
+                        : "border-gray-200 focus:border-red-500 focus:ring-red-100"
                     }`}
                   />
                   {formErrors.fullName && (
-                    <p className="text-red-500 text-xs mt-1 font-medium">
+                    <p className="text-red-500 text-xs mt-1">
                       {formErrors.fullName}
                     </p>
                   )}
                 </div>
 
                 <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1 ml-1">
+                    Phone Number
+                  </label>
                   <input
                     type="tel"
-                    placeholder="Phone (10 digits) *"
+                    placeholder="10-digit mobile number"
                     value={formData.phone}
                     onChange={(e) => {
                       const value = e.target.value.replace(/\D/g, "");
-                      if (value.length <= 10) {
-                        handleInputChange("phone", value);
-                      }
+                      if (value.length <= 10) handleInputChange("phone", value);
                     }}
                     maxLength={10}
-                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                       formErrors.phone
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-200 focus:border-red-500"
+                        ? "border-red-500 focus:ring-red-200"
+                        : "border-gray-200 focus:border-red-500 focus:ring-red-100"
                     }`}
                   />
                   {formErrors.phone && (
-                    <p className="text-red-500 text-xs mt-1 font-medium">
+                    <p className="text-red-500 text-xs mt-1">
                       {formErrors.phone}
                     </p>
                   )}
                 </div>
               </div>
 
+              {/* Email and Address Line */}
               <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1 ml-1">
+                  Email
+                </label>
                 <input
                   type="email"
-                  placeholder="Email *"
+                  placeholder="name@example.com"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                     formErrors.email
-                      ? "border-red-500 focus:border-red-500"
-                      : "border-gray-200 focus:border-red-500"
+                      ? "border-red-500 focus:ring-red-200"
+                      : "border-gray-200 focus:border-red-500 focus:ring-red-100"
                   }`}
                 />
                 {formErrors.email && (
-                  <p className="text-red-500 text-xs mt-1 font-medium">
+                  <p className="text-red-500 text-xs mt-1">
                     {formErrors.email}
                   </p>
                 )}
               </div>
 
               <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1 ml-1">
+                  Address
+                </label>
                 <input
                   type="text"
-                  placeholder="House No, Building Name, Street *"
+                  placeholder="House No, Building, Street Area"
                   value={formData.serviceLine}
                   onChange={(e) =>
                     handleInputChange("serviceLine", e.target.value)
                   }
-                  className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
+                  className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                     formErrors.serviceLine
-                      ? "border-red-500 focus:border-red-500"
-                      : "border-gray-200 focus:border-red-500"
+                      ? "border-red-500 focus:ring-red-200"
+                      : "border-gray-200 focus:border-red-500 focus:ring-red-100"
                   }`}
                 />
                 {formErrors.serviceLine && (
-                  <p className="text-red-500 text-xs mt-1 font-medium">
+                  <p className="text-red-500 text-xs mt-1">
                     {formErrors.serviceLine}
                   </p>
                 )}
               </div>
 
+              {/* City, State, Pincode */}
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1 ml-1">
+                    City
+                  </label>
                   <input
                     type="text"
-                    placeholder="City *"
+                    placeholder="City"
                     value={formData.city}
                     onChange={(e) => handleInputChange("city", e.target.value)}
-                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                       formErrors.city
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-200 focus:border-red-500"
+                        ? "border-red-500 focus:ring-red-200"
+                        : "border-gray-200 focus:border-red-500 focus:ring-red-100"
                     }`}
                   />
                   {formErrors.city && (
-                    <p className="text-red-500 text-xs mt-1 font-medium">
+                    <p className="text-red-500 text-xs mt-1">
                       {formErrors.city}
                     </p>
                   )}
                 </div>
 
                 <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1 ml-1">
+                    State
+                  </label>
                   <select
                     value={formData.state}
                     onChange={(e) => handleInputChange("state", e.target.value)}
-                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                       formErrors.state
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-200 focus:border-red-500"
-                    } ${!formData.state ? "text-gray-400" : "text-gray-900"}`}
+                        ? "border-red-500 focus:ring-red-200"
+                        : "border-gray-200 focus:border-red-500 focus:ring-red-100"
+                    }`}
                   >
-                    <option value="">Select State *</option>
+                    <option value="">Select State</option>
                     {INDIAN_STATES.map((state) => (
                       <option key={state} value={state}>
                         {state}
@@ -456,63 +454,79 @@ const AddressManagement = () => {
                     ))}
                   </select>
                   {formErrors.state && (
-                    <p className="text-red-500 text-xs mt-1 font-medium">
+                    <p className="text-red-500 text-xs mt-1">
                       {formErrors.state}
                     </p>
                   )}
                 </div>
 
                 <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1 ml-1">
+                    Pincode
+                  </label>
                   <input
                     type="text"
-                    placeholder="Pincode (6 digits) *"
+                    placeholder="6-digit Pincode"
                     value={formData.pincode}
                     onChange={(e) => {
                       const value = e.target.value.replace(/\D/g, "");
-                      if (value.length <= 6) {
+                      if (value.length <= 6)
                         handleInputChange("pincode", value);
-                      }
                     }}
                     maxLength={6}
-                    className={`w-full px-4 py-2 border-2 rounded-xl focus:outline-none text-sm transition-colors ${
+                    className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                       formErrors.pincode
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-200 focus:border-red-500"
+                        ? "border-red-500 focus:ring-red-200"
+                        : "border-gray-200 focus:border-red-500 focus:ring-red-100"
                     }`}
                   />
                   {formErrors.pincode && (
-                    <p className="text-red-500 text-xs mt-1 font-medium">
+                    <p className="text-red-500 text-xs mt-1">
                       {formErrors.pincode}
                     </p>
                   )}
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 text-sm cursor-pointer w-fit">
+              <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer w-fit border border-gray-200 hover:bg-gray-100 transition-colors">
                 <input
                   type="checkbox"
                   checked={formData.isDefault}
                   onChange={(e) =>
                     setFormData({ ...formData, isDefault: e.target.checked })
                   }
-                  className="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                  className="w-5 h-5 text-red-600 focus:ring-red-500 border-gray-300 rounded"
                 />
-                <span className="text-gray-700">Set as default address</span>
+                <span className="text-gray-700 font-medium text-sm">
+                  Set as default address
+                </span>
               </label>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-4 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-all"
+                  disabled={isSubmitting}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-xl text-sm font-semibold hover:from-red-700 hover:to-orange-600 transition-all shadow-md"
+                  disabled={isSubmitting}
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:scale-[1.01] transition-all disabled:opacity-70 disabled:hover:scale-100 disabled:shadow-none"
                 >
-                  {editingId ? "Update" : "Save"} Address
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={18} />
+                      {editingId ? "Update" : "Save"} Address
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -521,15 +535,20 @@ const AddressManagement = () => {
 
         {/* Address list */}
         {loading ? (
-          <div className="text-center py-12 text-gray-500">
-            <Loader2 className="animate-spin mx-auto mb-2" size={24} />
-            Loading addresses...
+          <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+            <Loader2 className="animate-spin mb-3 text-red-500" size={32} />
+            <p>Loading addresses...</p>
           </div>
         ) : addresses.length === 0 ? (
-          <div className="bg-white rounded-3xl shadow-md p-8 text-center">
-            <MapPin className="mx-auto mb-3 text-gray-400" size={40} />
-            <p className="text-gray-600 text-sm">
-              No saved addresses yet. Add one to get started!
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-12 text-center">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MapPin className="text-gray-400" size={32} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
+              No addresses found
+            </h3>
+            <p className="text-gray-500 text-sm">
+              Add a new address to manage your service locations better.
             </p>
           </div>
         ) : (
@@ -537,57 +556,65 @@ const AddressManagement = () => {
             {addresses.map((addr) => (
               <div
                 key={addr._id}
-                className={`bg-white rounded-3xl shadow-md p-5 transition-all hover:shadow-lg ${
+                className={`bg-white rounded-3xl p-6 transition-all hover:shadow-lg group relative overflow-hidden ${
                   addr.isDefault
-                    ? "border-2 border-emerald-400"
-                    : "border border-transparent"
+                    ? "border-2 border-emerald-400 shadow-md"
+                    : "border border-gray-100 shadow-sm"
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="font-bold text-gray-900">{addr.fullName}</p>
-                      {addr.isDefault && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-semibold">
-                          <CheckCircle size={12} />
-                          DEFAULT
-                        </span>
-                      )}
+                {addr.isDefault && (
+                  <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl z-10">
+                    DEFAULT
+                  </div>
+                )}
+
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                  <div className="flex-1 space-y-1">
+                    <h4 className="font-bold text-lg text-gray-900">
+                      {addr.fullName}
+                    </h4>
+                    <p className="text-gray-600 font-medium">
+                      {addr.serviceLine}
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                      {addr.city}, {addr.state} -{" "}
+                      <span className="text-gray-900 font-semibold">
+                        {addr.pincode}
+                      </span>
+                    </p>
+                    <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-gray-50">
+                      <span className="text-xs text-gray-500 flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg">
+                        📞 {addr.phone}
+                      </span>
+                      <span className="text-xs text-gray-500 flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg">
+                        ✉️ {addr.email}
+                      </span>
                     </div>
-                    <p className="text-sm text-gray-600">{addr.serviceLine}</p>
-                    <p className="text-sm text-gray-600">
-                      {addr.city}, {addr.state} - {addr.pincode}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2 flex items-center gap-2">
-                      <span>📱 {addr.phone}</span>
-                      <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                      <span>✉️ {addr.email}</span>
-                    </p>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 self-start mt-4 md:mt-0">
                     {!addr.isDefault && (
                       <button
                         onClick={() => handleSetDefault(addr._id)}
-                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                        className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                         title="Set as default"
                       >
-                        <CheckCircle size={18} />
+                        <CheckCircle size={20} />
                       </button>
                     )}
                     <button
                       onClick={() => handleEdit(addr)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                       title="Edit"
                     >
-                      <Edit2 size={18} />
+                      <Edit2 size={20} />
                     </button>
                     <button
                       onClick={() => handleDelete(addr._id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                       title="Delete"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={20} />
                     </button>
                   </div>
                 </div>

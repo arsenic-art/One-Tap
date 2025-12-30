@@ -7,6 +7,10 @@ import { useMechanicAuthStore } from "../../store/useAuthStore";
 
 const API_BASE = import.meta.env.VITE_API_BASE_LINK + "/api";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^[0-9]{10}$/;
+const SPECIAL_CHAR_REGEX = /[!@#$%^&*(),.?":{}|<>]/;
+
 const AuthPage = ({ signUp }) => {
   const [isLogin, setIsLogin] = useState(Boolean(signUp));
   const navigate = useNavigate();
@@ -73,35 +77,137 @@ const AuthPage = ({ signUp }) => {
     });
   }, [signUp]);
 
+  const validateField = (name, value) => {
+    let error = null;
+
+    switch (name) {
+      case "email":
+        if (!value) {
+          error = "Email is required";
+        } else if (!EMAIL_REGEX.test(value)) {
+          error = "Please enter a valid email address";
+        }
+        break;
+
+      case "password":
+        if (!value) {
+          error = "Password is required";
+        } else if (value.length < 6) {
+          error = "Password must be at least 6 characters";
+        } else if (!SPECIAL_CHAR_REGEX.test(value)) {
+          error =
+            "Password must contain at least one special character (!@#$...)";
+        }
+        break;
+
+      case "confirmPassword":
+        if (!isLogin) {
+          if (!value) {
+            error = "Please confirm your password";
+          } else if (value !== formData.password) {
+            error = "Passwords do not match";
+          }
+        }
+        break;
+
+      case "firstName":
+        if (!isLogin && !value.trim()) {
+          error = "First name is required";
+        }
+        break;
+
+      case "phone":
+        if (!isLogin) {
+          if (!value) {
+            error = "Phone number is required";
+          } else if (!PHONE_REGEX.test(value)) {
+            error = "Please enter a valid 10-digit phone number";
+          }
+        }
+        break;
+
+      default:
+        break;
+    }
+    return error;
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === "checkbox" ? checked : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: newValue,
     }));
 
-    if (errors[name]) setErrors((p) => ({ ...p, [name]: null }));
+    const error = validateField(name, newValue);
+    setErrors((prev) => ({
+      ...prev,
+      [name]: error,
+    }));
+
+    if (name === "password" && !isLogin && formData.confirmPassword) {
+      if (newValue !== formData.confirmPassword) {
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: "Passwords do not match",
+        }));
+      } else {
+        setErrors((prev) => ({ ...prev, confirmPassword: null }));
+      }
+    }
 
     if (apiError) setApiError("");
     if (apiSuccess) setApiSuccess("");
   };
 
   useEffect(() => {
+    if (!isLogin && formData.password && formData.confirmPassword) {
+      if (formData.password !== formData.confirmPassword) {
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: "Passwords do not match.",
+        }));
+      } else {
+        setErrors((prev) => ({ ...prev, confirmPassword: null }));
+      }
+    }
+  }, [formData.password, formData.confirmPassword, isLogin]);
+
+  const validateForm = () => {
     const newErrors = {};
 
+    const emailError = validateField("email", formData.email);
+    if (emailError) newErrors.email = emailError;
+
+    const passwordError = validateField("password", formData.password);
+    if (passwordError) newErrors.password = passwordError;
+
     if (!isLogin) {
-      if (formData.password && formData.confirmPassword) {
-        if (formData.password !== formData.confirmPassword) {
-          newErrors.confirmPassword = "Passwords do not match.";
-        }
+      const fnError = validateField("firstName", formData.firstName);
+      if (fnError) newErrors.firstName = fnError;
+
+      const phoneError = validateField("phone", formData.phone);
+      if (phoneError) newErrors.phone = phoneError;
+
+      const confirmError = validateField(
+        "confirmPassword",
+        formData.confirmPassword
+      );
+      if (confirmError) newErrors.confirmPassword = confirmError;
+
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = "Passwords do not match";
       }
     }
 
-    setErrors(newErrors);
-  }, [formData.password, formData.confirmPassword, isLogin]);
+    return newErrors;
+  };
 
   const isFormValid = () => {
-    if (Object.values(errors).some(Boolean)) return false;
+    if (Object.values(errors).some((err) => err !== null && err !== ""))
+      return false;
 
     if (isLogin) {
       return formData.email.trim() && formData.password;
@@ -113,18 +219,26 @@ const AuthPage = ({ signUp }) => {
       formData.confirmPassword &&
       formData.firstName.trim() &&
       formData.phone.trim() &&
-      formData.agreeToTerms
+      formData.agreeToTerms &&
+      formData.password.length >= 6 &&
+      SPECIAL_CHAR_REGEX.test(formData.password)
     );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const formErrors = validateForm();
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
+      return;
+    }
+
     if (!isFormValid()) return;
 
     setLoading(true);
     setApiError("");
     setApiSuccess("");
-    setErrors({});
 
     try {
       const currentBase = isUser ? `${API_BASE}/user` : `${API_BASE}/mechanic`;
@@ -166,7 +280,6 @@ const AuthPage = ({ signUp }) => {
         return;
       }
 
-      // Success handling
       if (!isLogin) {
         setApiSuccess(
           data.message ||
@@ -185,6 +298,7 @@ const AuthPage = ({ signUp }) => {
         });
         setTermsAccepted(false);
         setPrivacyAccepted(false);
+        setErrors({});
 
         // Auto-switch to login after 3 seconds
         setTimeout(() => {
@@ -283,7 +397,6 @@ const AuthPage = ({ signUp }) => {
           )}
 
           <form className="space-y-4" onSubmit={handleSubmit}>
-            {/* Name Fields (Sign Up Only) */}
             {!isLogin && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -299,7 +412,6 @@ const AuthPage = ({ signUp }) => {
                       errors.firstName ? "border-red-500" : "border-gray-300"
                     }`}
                     placeholder="Tulsidas"
-                    required
                   />
                   {errors.firstName && (
                     <p className="text-red-500 text-xs mt-1 font-medium">
@@ -338,7 +450,6 @@ const AuthPage = ({ signUp }) => {
                 }`}
                 placeholder="abc@onetap.com"
                 autoComplete="email"
-                required
               />
               {errors.email && (
                 <p className="text-red-500 text-xs mt-1 font-medium">
@@ -347,7 +458,6 @@ const AuthPage = ({ signUp }) => {
               )}
             </div>
 
-            {/* Phone Field (Sign Up Only) */}
             {!isLogin && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -364,7 +474,7 @@ const AuthPage = ({ signUp }) => {
                       : "border-gray-300"
                   }`}
                   placeholder="6267051524"
-                  required
+                  maxLength={10}
                 />
                 {(errors.phone || errors.phoneNumber) && (
                   <p className="text-red-500 text-xs mt-1 font-medium">
@@ -374,7 +484,6 @@ const AuthPage = ({ signUp }) => {
               </div>
             )}
 
-            {/* Password Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Password <span className="text-red-500">*</span>
@@ -390,7 +499,6 @@ const AuthPage = ({ signUp }) => {
                   }`}
                   placeholder="Enter your password"
                   autoComplete={isLogin ? "current-password" : "new-password"}
-                  required
                 />
                 <button
                   type="button"
@@ -407,7 +515,6 @@ const AuthPage = ({ signUp }) => {
               )}
             </div>
 
-            {/* Confirm Password Field (Sign Up Only) */}
             {!isLogin && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -426,7 +533,6 @@ const AuthPage = ({ signUp }) => {
                     }`}
                     placeholder="Confirm password"
                     autoComplete="new-password"
-                    required
                   />
                   <button
                     type="button"
@@ -484,7 +590,6 @@ const AuthPage = ({ signUp }) => {
                   checked={formData.agreeToTerms}
                   onChange={handleInputChange}
                   className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded mt-1"
-                  required
                 />
                 <div className="text-sm text-gray-700">
                   I agree to the{" "}

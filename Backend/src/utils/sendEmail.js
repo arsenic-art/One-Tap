@@ -1,22 +1,19 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,        
-  secure: true,     
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async ({ to, subject, html }) => {
-  await transporter.sendMail({
-    from: `"OneTap" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    html,
-  });
+  try {
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM_NAME,
+      to,
+      subject,
+      html,
+    });
+  } catch (err) {
+    console.error("Email send failed:", err);
+    throw err;  
+  }
 };
 
 module.exports = sendEmail;

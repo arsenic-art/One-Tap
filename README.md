@@ -1,52 +1,143 @@
-# OneTap 🔧
-
-OneTap is a full-stack web application that connects vehicle owners with nearby mechanics for servicing, repairs, and emergency roadside assistance.  
-It provides a simple request-based flow where users can raise service requests and mechanics can accept or reject them based on availability.
+# OneTap 🔧  
+*A role-based service request platform connecting vehicle owners with mechanics.*
 
 ---
 
-## Description
+## 📌 Overview
 
-The platform focuses on solving real-world problems around vehicle breakdowns by:
-- Reducing the time to find a reliable mechanic
-- Providing clear request status tracking
-- Enabling secure communication between users and mechanics
+**OneTap** is a full-stack web application that connects vehicle owners with nearby mechanics for vehicle servicing, repairs, and roadside assistance.
 
-OneTap follows a role-based architecture with separate access control for users and mechanics, ensuring secure and scalable request handling.
+The platform is designed around a **simple request-based workflow**, where:
+- Users raise service requests
+- Mechanics accept or reject requests based on availability
+- Both parties can track request status clearly
+
+The primary goal of OneTap is to solve **real-world coordination problems**, not to overcomplicate the system with unnecessary features.
 
 ---
 
-## Tech Stack
+## 🎯 Problem Statement
 
-**Frontend**
+During vehicle breakdowns, users often face:
+- Difficulty finding reliable mechanics quickly
+- Lack of transparency in service availability
+- Poor communication and status tracking
+
+OneTap addresses these issues by providing:
+- A structured service request lifecycle
+- Role-based access control
+- Clear ownership of actions and state transitions
+
+---
+
+## 🚀 Key Features
+
+### 👥 Role-Based Authentication
+- Separate authentication flows for:
+  - Vehicle owners (users)
+  - Mechanics
+- JWT-based authentication
+- Protected routes based on user roles
+
+---
+
+### 🛠️ Service Request Lifecycle
+- Users can create service requests
+- Mechanics can:
+  - Accept requests
+  - Reject requests if unavailable
+- Requests move through clearly defined states:
+  - Created → Accepted / Rejected
+
+This ensures predictable system behavior and prevents conflicting actions.
+
+---
+
+### 📬 User Communication & Security
+- Email verification during signup
+- Password reset via email
+- Secure REST APIs for all operations
+
+---
+
+### 👨‍🔧 Mechanic Management
+- Mechanic profiles with availability status
+- Controlled access to incoming requests
+- Ability to manage active and completed jobs
+
+---
+
+## 🧠 System Design Highlights
+
+- **Role-based access control (RBAC)**  
+  Prevents unauthorized actions across user types.
+
+- **State-driven request handling**  
+  Each service request follows a strict lifecycle.
+
+- **Backend-first validation**  
+  All critical checks are enforced server-side.
+
+- **Scalable API design**  
+  Easily extendable for real-time updates or geo-based discovery.
+
+---
+
+## 🛠 Tech Stack
+
+### Frontend
 - React
 - Tailwind CSS
 - Axios
-- Zustand
+- Zustand (state management)
 
-**Backend**
+### Backend
 - Node.js
 - Express.js
 - MongoDB (Mongoose)
 - JWT Authentication
-- Nodemailer
+- Resend
+
+## ⚠️ Edge Cases Considered
+
+- Unauthorized access attempts
+- Duplicate request submissions
+- Mechanics accepting multiple requests simultaneously
+- Invalid role-based actions
 
 ---
 
-## Key Features
+## 🧪 Future Improvements
 
-- User & mechanic authentication
-- Role-based protected routes
-- Service request lifecycle (create, accept, reject)
-- Email verification & password reset
-- Mechanic profile and availability management
-- Secure REST APIs
+- Location-based mechanic discovery (geospatial queries)
+- Real-time request updates using WebSockets
+- Ratings and reviews for mechanics
+- Admin dashboard for moderation
+- Notification support (email / push)
 
-## Future Goals
+---
 
-- Implement location-based mechanic discovery using geospatial queries
-- Add real-time request updates using WebSockets
-- Add ratings and reviews for mechanics
-- Build an admin dashboard for platform moderation
-- Improve frontend UX and responsiveness
-- Add notification support (email / push)
+## 🧠 What I Learned
+
+- Designing role-based backend systems
+- Managing state transitions safely
+- Structuring scalable REST APIs
+- Handling real-world user workflows
+- Implementing secure authentication flows
+
+---
+
+## 📄 Disclaimer
+
+This project is built for **learning and demonstration purposes** and does not currently process payments.
+
+---
+
+## 👨‍💻 Author
+
+Built by **Piyush Sharma**  
+Software Engineering Student | Full-Stack Developer
+
+---
+
+⭐ If you find this project useful, feel free to star the repository!

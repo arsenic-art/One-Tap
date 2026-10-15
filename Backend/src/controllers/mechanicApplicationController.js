@@ -44,11 +44,15 @@ const submitApplication = async (req, res) => {
       experienceYears: Number(req.body.experienceYears),
       vehicleSpecialization: req.body.vehicleSpecialization,
       servicesProvided: req.body.servicesProvided
-        ? JSON.parse(req.body.servicesProvided)
+        ? typeof req.body.servicesProvided === "string"
+          ? JSON.parse(req.body.servicesProvided)
+          : req.body.servicesProvided
         : [],
       certifications: req.body.certifications,
       availability: req.body.availability
-        ? JSON.parse(req.body.availability)
+        ? typeof req.body.availability === "string"
+          ? JSON.parse(req.body.availability)
+          : req.body.availability
         : {},
       bio: req.body.bio,
       storeImages,
@@ -114,9 +118,15 @@ const updateApplication = async (req, res) => {
     if (req.body.bio) application.bio = req.body.bio;
 
     if (req.body.servicesProvided)
-      application.servicesProvided = JSON.parse(req.body.servicesProvided);
+      application.servicesProvided =
+        typeof req.body.servicesProvided === "string"
+          ? JSON.parse(req.body.servicesProvided)
+          : req.body.servicesProvided;
     if (req.body.availability)
-      application.availability = JSON.parse(req.body.availability);
+      application.availability =
+        typeof req.body.availability === "string"
+          ? JSON.parse(req.body.availability)
+          : req.body.availability;
 
     if (req.body.deleteStoreImage === "true") {
       application.storeImages = [];

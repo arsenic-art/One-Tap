@@ -16,21 +16,26 @@ const mechanicDashboardRoutes = require("./routes/mechanicDashboardRoutes");
 app.set("trust proxy", 1);
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://127.0.0.1:5173",
   "http://localhost:7777",
   "https://onetap.vercel.app",
+  "https://one-tap-gray.vercel.app",
   process.env.CORS_ORIGIN,
-]; 
+].filter(Boolean);
 
 app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app")
+      ) {
         callback(null, true);
       } else {
         console.log("Blocked by CORS:", origin);
-        callback(new Error("Not allowed by CORS"));
+        callback(null, false);
       }
     },
     credentials: true,

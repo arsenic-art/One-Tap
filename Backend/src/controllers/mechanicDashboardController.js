@@ -26,9 +26,11 @@ exports.getMechanicDashboard = async (req, res) => {
     const formattedRequests = allRequests.map((req) => ({
       id: req._id,
       status: req.status === "pending" ? "new" : req.status,
-      customerName: `${req.userId.firstName} ${req.userId.lastName}`,
-      customerPhone: req.userId.phoneNumber,
-      customerEmail: req.userId.email,
+      customerName: req.userId
+        ? `${req.userId.firstName || ""} ${req.userId.lastName || ""}`.trim() || "User"
+        : "Unknown User",
+      customerPhone: req.userId?.phoneNumber || "N/A",
+      customerEmail: req.userId?.email || "N/A",
       vehicle: req.problemType,
       issue: req.serviceType,
       message: req.message,

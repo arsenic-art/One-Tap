@@ -28,7 +28,7 @@ exports.createRequest = async (req, res) => {
       });
     }
 
-    const address = await Address.findOne({
+    let address = await Address.findOne({
       userId: req.user._id,
       isDefault: true,
     });
